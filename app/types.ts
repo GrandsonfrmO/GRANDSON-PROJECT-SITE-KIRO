@@ -22,13 +22,10 @@ export interface Product {
 }
 
 export interface CartItem {
-  id: string;
-  productId: string;
-  name: string;
-  price: number;
+  product: Product;
   size: string;
   quantity: number;
-  image: string;
+  color?: string;
 }
 
 export type OrderStatus = 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
