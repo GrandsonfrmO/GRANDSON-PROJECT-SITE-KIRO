@@ -7,6 +7,10 @@ node_modules/
 /coverage
 
 # Next.js
+.next/
+out/
+build
+dist
 frontend/.next/
 frontend/out/
 frontend/build

@@ -1,0 +1,486 @@
+/* Admin Dashboard - Modern Design Harmonization */
+/* Optimized for performance with consolidated rules */
+
+/* Glassmorphism Base - Shared Properties */
+.glass-card,
+.btn-glass,
+.input-glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Fallback for browsers without backdrop-filter support */
+@supports not (backdrop-filter: blur(20px)) {
+  .glass-card,
+  .btn-glass,
+  .input-glass {
+    background: rgba(15, 23, 42, 0.85);
+  }
+}
+
+/* Glass Card Specific */
+.glass-card {
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+/* Button Glass Specific */
+.btn-glass {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 48px;
+  will-change: transform;
+  /* Hardware acceleration */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.btn-glass:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: scale(1.05);
+}
+
+.btn-glass:active {
+  transform: scale(0.95);
+}
+
+/* Input Glass Specific */
+.input-glass {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 16px;
+  min-height: 48px;
+}
+
+.input-glass:focus {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: #22c55e;
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2);
+  outline: none;
+}
+
+textarea.input-glass {
+  resize: vertical;
+  min-height: 120px;
+}
+
+select.input-glass {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+/* Admin Scrollbar Styling */
+.admin-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.admin-scrollbar::-webkit-scrollbar-track {
+  background: rgba(51, 65, 85, 0.3);
+  border-radius: 3px;
+}
+
+.admin-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.5);
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.admin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.8);
+}
+
+/* Admin Card Hover Effects */
+.card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+  /* Hardware acceleration */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  /* CSS containment for better performance */
+  contain: layout style paint;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* Admin Status Indicators */
+.status-dot {
+  position: relative;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-dot.online {
+  background: #22c55e;
+}
+
+.status-dot.offline {
+  background: #ef4444;
+}
+
+.status-dot.away {
+  background: #f59e0b;
+}
+
+/* Admin Responsive Adjustments */
+@media (max-width: 768px) {
+  /* Reduced blur for better mobile performance */
+  .glass-card,
+  .btn-glass,
+  .input-glass,
+  .glass-header,
+  .modal-content {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .btn-glass,
+  .input-glass {
+    min-height: 48px;
+    padding: 0.75rem 1rem;
+    font-size: 16px;
+  }
+  
+  textarea.input-glass {
+    min-height: 120px;
+  }
+  
+  /* Reduce animation complexity on mobile */
+  .animated-gradient-overlay {
+    animation-duration: 12s; /* Slower = less CPU */
+  }
+}
+
+/* Accessibility - Focus Indicators */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid #22c55e;
+  outline-offset: 2px;
+}
+
+/* Ensure focus is never hidden */
+*:focus-visible {
+  outline: 2px solid #22c55e;
+  outline-offset: 2px;
+}
+
+/* Accessibility - Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Accessibility - High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .glass-card,
+  .btn-glass,
+  .input-glass {
+    border-width: 2px;
+    border-color: currentColor;
+  }
+}
+
+/* Admin-Specific Utilities */
+.stagger-animation > * {
+  opacity: 0;
+  animation: fade-in-up 0.5s ease-out forwards;
+}
+
+.stagger-animation > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger-animation > *:nth-child(2) { animation-delay: 0.1s; }
+.stagger-animation > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger-animation > *:nth-child(4) { animation-delay: 0.2s; }
+.stagger-animation > *:nth-child(5) { animation-delay: 0.25s; }
+.stagger-animation > *:nth-child(n+6) { animation-delay: 0.3s; }
+
+/* Gradient Overlay Utilities */
+.gradient-overlay {
+  position: relative;
+  overflow: hidden;
+}
+
+.gradient-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(34, 197, 94, 0.08) 0%,
+    rgba(59, 130, 246, 0.08) 50%,
+    rgba(168, 85, 247, 0.08) 100%
+  );
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.gradient-overlay > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Radial Gradient Overlay */
+.gradient-overlay-radial {
+  position: relative;
+  overflow: hidden;
+}
+
+.gradient-overlay-radial::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at top right,
+    rgba(34, 197, 94, 0.1) 0%,
+    rgba(59, 130, 246, 0.05) 50%,
+    transparent 100%
+  );
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.gradient-overlay-radial > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Section Gradient Overlays */
+.section-gradient-overlay {
+  position: relative;
+  overflow: hidden;
+}
+
+.section-gradient-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom right,
+    rgba(34, 197, 94, 0.05) 0%,
+    rgba(168, 85, 247, 0.05) 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.section-gradient-overlay > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Smooth Scroll Behavior */
+html.admin-smooth-scroll {
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px; /* Account for fixed header */
+}
+
+/* Smooth scrolling for admin containers */
+.admin-scroll-container {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Scroll Indicator */
+.scroll-indicator {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(
+    to right,
+    rgba(34, 197, 94, 0.3),
+    rgba(34, 197, 94, 0.8),
+    rgba(34, 197, 94, 0.3)
+  );
+  transform-origin: left;
+  transform: scaleX(0);
+  transition: transform 0.1s ease-out;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+/* Scroll to top button */
+.scroll-to-top {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+  z-index: 1000;
+  /* Hardware acceleration */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.scroll-to-top.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.scroll-to-top:hover {
+  transform: translateY(-4px) scale(1.1);
+  box-shadow: 0 8px 20px rgba(34, 197, 94, 0.6);
+}
+
+.scroll-to-top:active {
+  transform: translateY(-2px) scale(1.05);
+}
+
+.scroll-to-top svg {
+  width: 24px;
+  height: 24px;
+  color: white;
+}
+
+/* Mobile scroll to top adjustments */
+@media (max-width: 768px) {
+  .scroll-to-top {
+    bottom: 5rem; /* Above mobile navigation */
+    right: 1rem;
+    width: 44px;
+    height: 44px;
+  }
+  
+  .scroll-to-top svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* Admin Header Glassmorphism */
+.glass-header {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  position: relative;
+  overflow: hidden;
+  /* Hardware acceleration for Safari */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+
+/* Fallback for browsers without backdrop-filter support */
+@supports not (backdrop-filter: blur(20px)) {
+  .glass-header {
+    background: rgba(15, 23, 42, 0.95);
+  }
+}
+
+/* Admin Animated Gradient Overlay */
+.animated-gradient-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(34, 197, 94, 0.1) 0%,
+    rgba(59, 130, 246, 0.1) 50%,
+    rgba(168, 85, 247, 0.1) 100%
+  );
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease infinite;
+  pointer-events: none;
+  z-index: 0;
+  will-change: background-position;
+}
+
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Admin Modal Content */
+.modal-content {
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+/* Fallback for browsers without backdrop-filter support */
+@supports not (backdrop-filter: blur(20px)) {
+  .modal-content {
+    background: rgba(15, 23, 42, 0.98);
+  }
+}
+
+/* Additional Animation Keyframes for Admin Interface */
+/* Note: Most animations are inherited from globals.css */
+
+/* Slide Down Animation for Notifications */
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-down {
+  animation: slide-down 0.3s ease-out forwards;
+}
+
+/* Performance Optimizations */
+
+/* CSS Containment for better rendering performance */
+.admin-card,
+.admin-section,
+.stat-card {
+  contain: layout style paint;
+}
+
+/* Content visibility for off-screen content */
+.admin-list-item {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 100px;
+}
+
+/* Optimize stagger animations */
+.stagger-animation > * {
+  /* Use transform instead of position for better performance */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
