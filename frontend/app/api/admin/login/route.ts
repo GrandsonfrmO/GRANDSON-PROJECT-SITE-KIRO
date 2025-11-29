@@ -138,8 +138,9 @@ export async function POST(request: NextRequest) {
       } else {
         console.log('Backend login failed with status:', response.status, '- using fallback');
       }
-    } catch (backendError) {
-      console.log('Backend not available:', backendError.message, '- using demo credentials');
+    } catch (backendError: unknown) {
+      const errorMessage = backendError instanceof Error ? backendError.message : 'Unknown error';
+      console.log('Backend not available:', errorMessage, '- using demo credentials');
     }
 
     // Utiliser les identifiants de démonstration
