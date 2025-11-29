@@ -1,0 +1,437 @@
+'use client';
+
+import { useState, useRef } from 'react';
+import { useToast } from './Toast';
+import ImagePreview from './ImagePreview';
+
+interface Product {
+  name: string;
+  description: string;
+  price: string;
+  category: string;
+  sizes: string[];
+  images: string[];
+  colors: string[];
+  stock: string;
+}
+
+interface AddProductFormProps {
+  onProductCreated: () => void;
+  onCancel: () => void;
+}
+
+export default function AddProductForm({ onProductCreated, onCancel }: AddProductFormProps) {
+  const { showSuccess, showError } = useToast();
+  
+  const [newProduct, setNewProduct] = useState<Product>({
+    name: '',
+    description: '',
+    price: '',
+    category: '',
+    sizes: [],
+    images: [],
+    colors: [],
+    stock: ''
+  });
+
+  const [uploadedImages, setUploadedImages] = useState<File[]>([]);
+  const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const categories = [
+    'Tshirt',
+    'Survêtement',
+    'Pull',
+    'Accessoires',
+    'Masque',
+    'Casquette',
+    'Bonnet'
+  ];
+
+  const handleImageUpload = (files: FileList | null) => {
+    if (!files) return;
+
+    const validFiles = Array.from(files).filter(file => {
+      if (!file.type.startsWith('image/')) {
+        showError(`${file.name} n'est pas une image valide`);
+        return false;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        showError(`${file.name} est trop volumineux (max 5MB)`);
+        return false;
+      }
+      return true;
+    });
+
+    setUploadedImages(prev => [...prev, ...validFiles]);
+
+    validFiles.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreviewUrls(prev => [...prev, e.target?.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeImage = (index: number) => {
+    setUploadedImages(prev => prev.filter((_, i) => i !== index));
+    setImagePreviewUrls(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadImages = async (): Promise<string[]> => {
+    if (uploadedImages.length === 0) return [];
+
+    setIsUploading(true);
+    const uploadedUrls: string[] = [];
+
+    try {
+      for (const file of uploadedImages) {
+        const formData = new FormData();
+        formData.append('image', file);
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          uploadedUrls.push(data.url);
+        } else {
+          throw new Error(`Erreur upload ${file.name}`);
+        }
+      }
+      return uploadedUrls;
+    } catch (error) {
+      console.error('Erreur upload images:', error);
+      showError('Erreur lors de l\'upload des images');
+      return [];
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const createProduct = async () => {
+    if (!newProduct.name.trim()) {
+      showError('Le nom du produit est requis');
+      return;
+    }
+    if (!newProduct.price || parseFloat(newProduct.price) <= 0) {
+      showError('Le prix doit être supérieur à 0');
+      return;
+    }
+    if (!newProduct.category) {
+      showError('La catégorie est requise');
+      return;
+    }
+    if (!newProduct.stock || parseInt(newProduct.stock) < 0) {
+      showError('Le stock doit être un nombre positif');
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      
+      const imageUrls = await uploadImages();
+      
+      const productData = {
+        ...newProduct,
+        price: parseFloat(newProduct.price),
+        stock: parseInt(newProduct.stock),
+        images: [...newProduct.images, ...imageUrls]
+      };
+
+      // Import authStorage at the top of the file
+      const { authStorage } = await import('@/app/lib/authStorage');
+      const token = authStorage.getToken();
+      
+      if (!token) {
+        showError('Session expirée, veuillez vous reconnecter');
+        return;
+      }
+
+      const response = await fetch('/api/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(productData),
+      });
+
+      if (response.ok) {
+        showSuccess('Produit créé avec succès!');
+        resetForm();
+        onProductCreated();
+      } else {
+        const error = await response.json();
+        showError(error.error?.message || 'Erreur lors de la création du produit');
+      }
+    } catch (error) {
+      console.error('Erreur création produit:', error);
+      showError('Erreur lors de la création du produit');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setNewProduct({
+      name: '',
+      description: '',
+      price: '',
+      category: '',
+      sizes: [],
+      images: [],
+      colors: [],
+      stock: ''
+    });
+    setUploadedImages([]);
+    setImagePreviewUrls([]);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header Simple */}
+      <div className="glass-card rounded-2xl p-6 border border-white/20">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center">
+              <span className="text-xl">✨</span>
+            </div>
+            <h3 className="text-white text-xl font-bold">Ajouter un Produit</h3>
+          </div>
+          <button 
+            onClick={onCancel}
+            className="btn-glass px-4 py-2 text-gray-300 rounded-xl hover:text-white transition-all"
+          >
+            ← Retour
+          </button>
+        </div>
+      </div>
+      
+      {/* Formulaire Simple - Tout sur une page */}
+      <div className="glass-primary backdrop-blur-xl border border-white/20 rounded-2xl p-6">
+        <div className="space-y-6">
+          {/* Informations de base */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Nom */}
+            <div className="md:col-span-2">
+              <label className="block text-white font-medium mb-2">Nom du produit *</label>
+              <input
+                type="text"
+                value={newProduct.name}
+                onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
+                className="input-glass w-full px-4 py-3 rounded-xl text-white placeholder-white/50"
+                placeholder="Ex: Boubou Traditionnel"
+              />
+            </div>
+
+            {/* Prix */}
+            <div>
+              <label className="block text-white font-medium mb-2">Prix (GNF) *</label>
+              <input
+                type="number"
+                value={newProduct.price}
+                onChange={(e) => setNewProduct({...newProduct, price: e.target.value})}
+                className="input-glass w-full px-4 py-3 rounded-xl text-white placeholder-white/50"
+                placeholder="85000"
+              />
+            </div>
+
+            {/* Stock */}
+            <div>
+              <label className="block text-white font-medium mb-2">Stock *</label>
+              <input
+                type="number"
+                value={newProduct.stock}
+                onChange={(e) => setNewProduct({...newProduct, stock: e.target.value})}
+                className="input-glass w-full px-4 py-3 rounded-xl text-white placeholder-white/50"
+                placeholder="25"
+              />
+            </div>
+
+            {/* Catégorie */}
+            <div className="md:col-span-2">
+              <label className="block text-white font-medium mb-2">Catégorie *</label>
+              <select
+                value={newProduct.category}
+                onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
+                className="input-glass w-full px-4 py-3 rounded-xl text-white bg-white/10 border border-white/20 focus:border-accent focus:ring-4 focus:ring-accent/20 transition-all duration-300"
+              >
+                <option value="" className="bg-gray-800">Sélectionner une catégorie</option>
+                {categories.map(cat => (
+                  <option key={cat} value={cat} className="bg-gray-800">{cat}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Description */}
+            <div className="md:col-span-2">
+              <label className="block text-white font-medium mb-2">Description</label>
+              <textarea
+                value={newProduct.description}
+                onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
+                rows={3}
+                className="input-glass w-full px-4 py-3 rounded-xl text-white placeholder-white/50 resize-vertical bg-white/10 border border-white/20 focus:border-accent focus:ring-4 focus:ring-accent/20 transition-all duration-300"
+                placeholder="Description du produit..."
+              />
+            </div>
+          </div>
+
+          {/* Variantes (optionnel) */}
+          <div className="border-t border-white/10 pt-6">
+            <h4 className="text-white font-medium mb-4">Variantes (optionnel)</h4>
+            
+            {/* Tailles */}
+            <div className="mb-4">
+              <label className="block text-white/80 text-sm mb-3">Tailles disponibles</label>
+              <div className="flex flex-wrap gap-2">
+                {['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'].map(size => (
+                  <button
+                    key={size}
+                    type="button"
+                    onClick={() => {
+                      const currentSizes = newProduct.sizes;
+                      if (currentSizes.includes(size)) {
+                        setNewProduct({...newProduct, sizes: currentSizes.filter(s => s !== size)});
+                      } else {
+                        setNewProduct({...newProduct, sizes: [...currentSizes, size]});
+                      }
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      newProduct.sizes.includes(size)
+                        ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
+                        : 'bg-white/10 text-white/70 hover:bg-white/20'
+                    }`}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+              {newProduct.sizes.length > 0 && (
+                <p className="text-emerald-400 text-xs mt-2">
+                  ✓ {newProduct.sizes.length} taille(s) sélectionnée(s): {newProduct.sizes.join(', ')}
+                </p>
+              )}
+            </div>
+
+            {/* Couleurs */}
+            <div>
+              <label className="block text-white/80 text-sm mb-3">Couleurs disponibles</label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { name: 'Blanc', color: '#FFFFFF', border: true },
+                  { name: 'Noir', color: '#000000' },
+                  { name: 'Rouge', color: '#EF4444' },
+                  { name: 'Bleu', color: '#3B82F6' },
+                  { name: 'Vert', color: '#10B981' },
+                  { name: 'Jaune', color: '#F59E0B' },
+                  { name: 'Rose', color: '#EC4899' },
+                  { name: 'Violet', color: '#8B5CF6' },
+                  { name: 'Orange', color: '#F97316' },
+                  { name: 'Marron', color: '#92400E' }
+                ].map(({ name, color, border }) => (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => {
+                      const currentColors = newProduct.colors;
+                      if (currentColors.includes(name)) {
+                        setNewProduct({...newProduct, colors: currentColors.filter(c => c !== name)});
+                      } else {
+                        setNewProduct({...newProduct, colors: [...currentColors, name]});
+                      }
+                    }}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                      newProduct.colors.includes(name)
+                        ? 'bg-white/20 text-white ring-2 ring-white/60 shadow-lg'
+                        : 'bg-white/10 text-white/70 hover:bg-white/20'
+                    }`}
+                  >
+                    <div 
+                      className={`w-4 h-4 rounded-full ${border ? 'border-2 border-gray-400' : ''}`}
+                      style={{ backgroundColor: color }}
+                    />
+                    {name}
+                  </button>
+                ))}
+              </div>
+              {newProduct.colors.length > 0 && (
+                <p className="text-emerald-400 text-xs mt-2">
+                  ✓ {newProduct.colors.length} couleur(s) sélectionnée(s): {newProduct.colors.join(', ')}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Images */}
+          <div className="border-t border-white/10 pt-6">
+            <h4 className="text-white font-medium mb-4">Images</h4>
+            
+            {/* Zone d'upload simple */}
+            <div className="border-2 border-dashed border-white/30 rounded-xl p-6 text-center hover:border-white/50 transition-all">
+              <div className="text-4xl mb-2">📷</div>
+              <p className="text-white/70 mb-3">Cliquez pour ajouter des images</p>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="btn-glass px-4 py-2 text-white rounded-xl hover:scale-105 transition-all"
+              >
+                Sélectionner
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={(e) => handleImageUpload(e.target.files)}
+                className="hidden"
+              />
+            </div>
+
+            {/* Aperçu des images */}
+            {imagePreviewUrls.length > 0 && (
+              <div className="mt-4">
+                <ImagePreview
+                  images={imagePreviewUrls}
+                  onRemove={removeImage}
+                  maxImages={6}
+                  editable={true}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Boutons d'action */}
+          <div className="flex gap-3 pt-6 border-t border-white/10">
+            <button
+              onClick={createProduct}
+              disabled={isUploading}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-accent to-green-500 hover:from-green-500 hover:to-accent text-black font-bold rounded-xl hover:scale-105 active:scale-95 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+            >
+              {isUploading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"></div>
+                  Création...
+                </span>
+              ) : (
+                '✨ Créer le produit'
+              )}
+            </button>
+            
+            <button
+              onClick={resetForm}
+              disabled={isUploading}
+              className="px-6 py-3 bg-red-500/20 text-red-300 rounded-xl hover:bg-red-500/30 hover:scale-105 active:scale-95 transition-all duration-300 disabled:opacity-50"
+            >
+              🗑️ Réinitialiser
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

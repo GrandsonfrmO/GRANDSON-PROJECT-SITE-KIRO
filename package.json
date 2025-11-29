@@ -1,0 +1,35 @@
+{
+  "name": "grandson-ecommerce",
+  "version": "1.0.0",
+  "description": "Grandson Project E-commerce Platform",
+  "private": true,
+  "scripts": {
+    "dev:backend": "cd backend && node hybrid-server.js",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev": "npm run dev:backend & npm run dev:frontend",
+    "build:backend": "cd backend && npm install",
+    "build:frontend": "cd frontend && npm install && npm run build",
+    "build": "npm run build:backend && npm run build:frontend",
+    "start:backend": "cd backend && NODE_ENV=production node hybrid-server.js",
+    "start:frontend": "cd frontend && npm start",
+    "start": "npm run start:backend & npm run start:frontend",
+    "postinstall": "cd backend && npm install && cd ../frontend && npm install"
+  },
+  "keywords": [
+    "ecommerce",
+    "streetwear",
+    "nextjs",
+    "express"
+  ],
+  "author": "Grandson Project",
+  "license": "ISC",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.83.0",
+    "axios": "^1.13.2",
+    "bcrypt": "^6.0.0",
+    "dotenv": "^17.2.3",
+    "jwt-simple": "^0.5.6",
+    "node-fetch": "^2.7.0",
+    "web-push": "^3.6.7"
+  }
+}
