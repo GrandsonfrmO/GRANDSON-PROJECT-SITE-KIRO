@@ -173,10 +173,10 @@ export default function CheckoutPage() {
       const orderData = {
         ...formData,
         items: cart.map((item) => ({
-          productId: item.product.id,
+          productId: item.productId,
           size: item.size,
           quantity: item.quantity,
-          price: item.product.price,
+          price: item.price,
         })),
         deliveryFee: getDeliveryFee(),
         totalAmount: getTotalPrice() + getDeliveryFee(),
