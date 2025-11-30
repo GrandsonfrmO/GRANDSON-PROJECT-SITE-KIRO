@@ -529,22 +529,66 @@ app.put('/api/admin/products/:id', authenticateToken, async (req, res) => {
 app.post('/api/admin/products', authenticateToken, async (req, res) => {
   try {
     console.log('📝 Creating new product...');
+    console.log('📦 Product data received:', JSON.stringify(req.body, null, 2));
+    
+    // Validation des champs requis
+    const { name, price, category, stock } = req.body;
+    
+    if (!name || !name.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Le nom du produit est requis' }
+      });
+    }
+    
+    if (!price || isNaN(parseFloat(price)) || parseFloat(price) <= 0) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Le prix doit être un nombre positif' }
+      });
+    }
+    
+    if (!category) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'La catégorie est requise' }
+      });
+    }
+    
+    // Préparer les données pour Supabase
+    const productData = {
+      name: req.body.name.trim(),
+      description: req.body.description || 'Aucune description',
+      price: parseFloat(req.body.price),
+      category: req.body.category,
+      stock: parseInt(req.body.stock) || 0,
+      sizes: req.body.sizes || ['Unique'],
+      colors: req.body.colors || [],
+      images: req.body.images || [],
+      is_active: req.body.is_active !== false
+    };
+    
+    console.log('📤 Sending to Supabase:', JSON.stringify(productData, null, 2));
     
     const { data, error } = await supabase
       .from('products')
-      .insert(req.body)
+      .insert(productData)
       .select()
       .single();
 
     if (error) {
-      console.error('❌ Error creating product:', error);
+      console.error('❌ Supabase error creating product:', error);
       return res.status(500).json({
         success: false,
-        error: { message: 'Failed to create product' }
+        error: { 
+          message: `Erreur Supabase: ${error.message}`,
+          details: error.details,
+          hint: error.hint
+        }
       });
     }
 
-    console.log('✅ Product created successfully');
+    console.log('✅ Product created successfully:', data.id);
     res.json({
       success: true,
       data: data
@@ -553,7 +597,7 @@ app.post('/api/admin/products', authenticateToken, async (req, res) => {
     console.error('❌ Server error:', error);
     res.status(500).json({
       success: false,
-      error: { message: 'Internal server error' }
+      error: { message: 'Erreur serveur interne: ' + error.message }
     });
   }
 });

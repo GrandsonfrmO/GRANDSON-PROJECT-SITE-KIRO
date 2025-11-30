@@ -198,14 +198,20 @@ export default function AddProductForm({ onProductCreated, onCancel }: AddProduc
       
       const imageUrls = await uploadImages();
       
+      // Formater les données pour Supabase (snake_case et types corrects)
       const productData = {
-        ...newProduct,
-        description: newProduct.description || '',
+        name: newProduct.name.trim(),
+        description: newProduct.description?.trim() || 'Aucune description',
         price: parseFloat(newProduct.price),
+        category: newProduct.category,
         stock: parseInt(newProduct.stock),
         sizes: newProduct.sizes.length > 0 ? newProduct.sizes : ['Unique'],
-        images: [...newProduct.images, ...imageUrls]
+        colors: newProduct.colors.length > 0 ? newProduct.colors : [],
+        images: imageUrls.length > 0 ? imageUrls : newProduct.images,
+        is_active: true
       };
+      
+      console.log('📦 Données produit à envoyer:', productData);
 
       // Import authStorage at the top of the file
       const { authStorage } = await import('@/app/lib/authStorage');
@@ -230,8 +236,15 @@ export default function AddProductForm({ onProductCreated, onCancel }: AddProduc
         resetForm();
         onProductCreated();
       } else {
-        const error = await response.json();
-        showError(error.error?.message || 'Erreur lors de la création du produit');
+        const errorData = await response.json();
+        console.error('❌ Erreur création produit:', errorData);
+        const errorMsg = errorData.error?.message || 'Erreur lors de la création du produit';
+        showError(errorMsg);
+        
+        // Afficher plus de détails dans la console pour le debug
+        if (errorData.error?.details) {
+          console.error('Détails:', errorData.error.details);
+        }
       }
     } catch (error) {
       console.error('Erreur création produit:', error);

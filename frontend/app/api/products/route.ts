@@ -154,6 +154,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
+    console.log('📦 Création produit - données reçues:', JSON.stringify(body, null, 2));
+    
     // Get admin token from headers
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     
@@ -172,6 +174,9 @@ export async function POST(request: NextRequest) {
 
     // Forward to backend
     const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
+    
+    console.log('📡 Envoi vers backend:', backendUrl);
+    
     const response = await fetch(`${backendUrl}/api/admin/products`, {
       method: 'POST',
       headers: {
@@ -179,23 +184,35 @@ export async function POST(request: NextRequest) {
         'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify(body),
+      signal: AbortSignal.timeout(10000) // 10 secondes timeout
     });
 
     const data = await response.json();
+    
+    console.log('📬 Réponse backend:', response.status, JSON.stringify(data, null, 2));
 
     if (!response.ok) {
       return NextResponse.json(data, { status: response.status });
     }
 
     return NextResponse.json(data, { status: 201 });
-  } catch (error) {
-    console.error('Create product API error:', error);
+  } catch (error: any) {
+    console.error('❌ Create product API error:', error);
+    
+    // Message d'erreur plus détaillé
+    let errorMessage = 'Erreur lors de la création du produit';
+    if (error.name === 'AbortError' || error.message?.includes('timeout')) {
+      errorMessage = 'Le serveur backend ne répond pas. Vérifiez qu\'il est démarré (npm run backend).';
+    } else if (error.code === 'ECONNREFUSED') {
+      errorMessage = 'Impossible de se connecter au backend. Démarrez le serveur avec: npm run backend';
+    }
+    
     return NextResponse.json(
       {
         success: false,
         error: {
           code: 'INTERNAL_ERROR',
-          message: 'Erreur lors de la création du produit'
+          message: errorMessage
         }
       },
       { status: 500 }
