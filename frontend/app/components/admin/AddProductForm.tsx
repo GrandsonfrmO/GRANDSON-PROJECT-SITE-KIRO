@@ -49,7 +49,59 @@ export default function AddProductForm({ onProductCreated, onCancel }: AddProduc
     'Bonnet'
   ];
 
-  const handleImageUpload = (files: FileList | null) => {
+  // Fonction de compression d'image
+  const compressImage = (file: File, maxWidth = 1200, quality = 0.8): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let { width, height } = img;
+          
+          // Redimensionner si nécessaire
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(file);
+            return;
+          }
+          
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {
+                  type: 'image/jpeg',
+                  lastModified: Date.now(),
+                });
+                console.log(`📸 Image compressée: ${(file.size / 1024).toFixed(0)}KB → ${(compressedFile.size / 1024).toFixed(0)}KB`);
+                resolve(compressedFile);
+              } else {
+                resolve(file);
+              }
+            },
+            'image/jpeg',
+            quality
+          );
+        };
+        img.onerror = () => reject(new Error('Erreur chargement image'));
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => reject(new Error('Erreur lecture fichier'));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleImageUpload = async (files: FileList | null) => {
     if (!files) return;
 
     const validFiles = Array.from(files).filter(file => {
@@ -57,22 +109,32 @@ export default function AddProductForm({ onProductCreated, onCancel }: AddProduc
         showError(`${file.name} n'est pas une image valide`);
         return false;
       }
-      if (file.size > 5 * 1024 * 1024) {
-        showError(`${file.name} est trop volumineux (max 5MB)`);
+      if (file.size > 15 * 1024 * 1024) {
+        showError(`${file.name} est trop volumineux (max 15MB)`);
         return false;
       }
       return true;
     });
 
-    setUploadedImages(prev => [...prev, ...validFiles]);
-
-    validFiles.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImagePreviewUrls(prev => [...prev, e.target?.result as string]);
-      };
-      reader.readAsDataURL(file);
-    });
+    // Compresser chaque image
+    for (const file of validFiles) {
+      try {
+        const compressedFile = await compressImage(file);
+        setUploadedImages(prev => [...prev, compressedFile]);
+        
+        // Créer l'aperçu
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setImagePreviewUrls(prev => [...prev, e.target?.result as string]);
+        };
+        reader.readAsDataURL(compressedFile);
+        
+        showSuccess(`${file.name} compressée avec succès`);
+      } catch (error) {
+        console.error('Erreur compression:', error);
+        showError(`Erreur compression ${file.name}`);
+      }
+    }
   };
 
   const removeImage = (index: number) => {
@@ -376,7 +438,8 @@ export default function AddProductForm({ onProductCreated, onCancel }: AddProduc
             {/* Zone d'upload simple */}
             <div className="border-2 border-dashed border-white/30 rounded-xl p-6 text-center hover:border-white/50 transition-all">
               <div className="text-4xl mb-2">📷</div>
-              <p className="text-white/70 mb-3">Cliquez pour ajouter des images</p>
+              <p className="text-white/70 mb-2">Cliquez pour ajouter des images</p>
+              <p className="text-white/50 text-xs mb-3">Max 15MB par image • Compression automatique</p>
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
