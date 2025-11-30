@@ -436,6 +436,40 @@ export default function PersonnalisationPage() {
           </div>
         </div>
 
+        {/* Gallery Section - Dynamic - AVANT FAQ */}
+        {galleryItems.length > 0 && (
+        <div className={`${isMobile ? 'mb-12' : 'mb-20'}`}>
+          <div className="text-center mb-10">
+            <h2 className={`font-black text-neutral-900 mb-4 ${isMobile ? 'text-3xl' : 'text-5xl'}`}>
+              Exemples de Réalisations
+            </h2>
+            <p className={`text-neutral-600 max-w-3xl mx-auto ${isMobile ? 'text-base' : 'text-xl'}`}>
+              Découvrez quelques-unes de nos créations personnalisées
+            </p>
+          </div>
+
+          <div className={`grid gap-6 ${isMobile ? 'grid-cols-2' : 'md:grid-cols-3 lg:grid-cols-4'}`}>
+            {galleryItems.map((item) => (
+              <div key={item.id} className="group relative aspect-square bg-gradient-to-br from-neutral-200 to-neutral-300 rounded-2xl overflow-hidden hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-2xl">
+                {item.image_url && (
+                  <img 
+                    src={item.image_url} 
+                    alt={item.title}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+                  <div className="text-white">
+                    <p className="font-black text-lg">{item.title}</p>
+                    <p className="text-sm">{item.subtitle}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        )}
+
         {/* FAQ Section */}
         <div className={`bg-gradient-to-br from-neutral-50 to-white rounded-3xl ${
           isMobile ? 'p-6 mb-12' : 'p-12 mb-20'
@@ -545,40 +579,6 @@ export default function PersonnalisationPage() {
             </div>
           </div>
         </div>
-
-        {/* Gallery Section - Dynamic */}
-        {galleryItems.length > 0 && (
-        <div className={`${isMobile ? 'mb-12' : 'mb-20'}`}>
-          <div className="text-center mb-10">
-            <h2 className={`font-black text-neutral-900 mb-4 ${isMobile ? 'text-3xl' : 'text-5xl'}`}>
-              Exemples de Réalisations
-            </h2>
-            <p className={`text-neutral-600 max-w-3xl mx-auto ${isMobile ? 'text-base' : 'text-xl'}`}>
-              Découvrez quelques-unes de nos créations personnalisées
-            </p>
-          </div>
-
-          <div className={`grid gap-6 ${isMobile ? 'grid-cols-2' : 'md:grid-cols-3 lg:grid-cols-4'}`}>
-            {galleryItems.map((item) => (
-              <div key={item.id} className="group relative aspect-square bg-gradient-to-br from-neutral-200 to-neutral-300 rounded-2xl overflow-hidden hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-2xl">
-                {item.image_url && (
-                  <img 
-                    src={item.image_url} 
-                    alt={item.title}
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                  <div className="text-white">
-                    <p className="font-black text-lg">{item.title}</p>
-                    <p className="text-sm">{item.subtitle}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-        )}
 
         {/* Final CTA */}
         <div className="relative bg-gradient-to-br from-black via-neutral-900 to-black rounded-3xl overflow-hidden p-12 text-center">
