@@ -1,16 +1,38 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useIsMobile } from '../hooks/useIsMobile';
-import { useInteractiveButton } from '../hooks/useHapticFeedback';
 import Layout from '../components/Layout';
 import ParticleBackground from '../components/ParticleBackground';
 
+interface GalleryItem {
+  id: string;
+  title: string;
+  subtitle: string;
+  image_url: string;
+}
+
 export default function PersonnalisationPage() {
   const isMobile = useIsMobile();
-  const { handlePress } = useInteractiveButton();
+  const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
 
   const whatsappNumber = '+224 662 66 29 58';
   const whatsappLink = `https://wa.me/224662662958`;
+
+  useEffect(() => {
+    const fetchGallery = async () => {
+      try {
+        const response = await fetch('/api/admin/customization-gallery');
+        const data = await response.json();
+        if (data.success && data.data?.items) {
+          setGalleryItems(data.data.items);
+        }
+      } catch (error) {
+        console.error('Error fetching gallery:', error);
+      }
+    };
+    fetchGallery();
+  }, []);
 
   return (
     <Layout>
@@ -135,24 +157,6 @@ export default function PersonnalisationPage() {
             </div>
 
             {/* Service 3 */}
-            <div className="group bg-gradient-to-br from-white to-neutral-50 rounded-2xl p-6 border-2 border-neutral-200 hover:border-accent hover:shadow-2xl transition-all duration-300 hover:scale-105">
-              <div className="text-5xl mb-4">✂️</div>
-              <h3 className="text-2xl font-black text-neutral-900 mb-3">Broderie</h3>
-              <p className="text-neutral-600 leading-relaxed">
-                Broderie professionnelle pour un rendu premium et élégant sur tous vos vêtements et accessoires.
-              </p>
-            </div>
-
-            {/* Service 4 */}
-            <div className="group bg-gradient-to-br from-white to-neutral-50 rounded-2xl p-6 border-2 border-neutral-200 hover:border-green-500 hover:shadow-2xl transition-all duration-300 hover:scale-105">
-              <div className="text-5xl mb-4">🏢</div>
-              <h3 className="text-2xl font-black text-neutral-900 mb-3">Uniformes d'Entreprise</h3>
-              <p className="text-neutral-600 leading-relaxed">
-                Création d'uniformes personnalisés pour votre entreprise, équipe ou événement avec votre branding.
-              </p>
-            </div>
-
-            {/* Service 5 */}
             <div className="group bg-gradient-to-br from-white to-neutral-50 rounded-2xl p-6 border-2 border-neutral-200 hover:border-accent hover:shadow-2xl transition-all duration-300 hover:scale-105">
               <div className="text-5xl mb-4">🎁</div>
               <h3 className="text-2xl font-black text-neutral-900 mb-3">Cadeaux Personnalisés</h3>
@@ -325,20 +329,15 @@ export default function PersonnalisationPage() {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-white/80">Bonnets</span>
-                    <span className="text-accent font-black text-xl">60 000 GNF</span>
+                    <span className="text-accent font-black text-xl">80 000 GNF</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-white/80">Masques</span>
-                    <span className="text-accent font-black text-xl">40 000 GNF</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-white/80">Sacs tote</span>
-                    <span className="text-accent font-black text-xl">100 000 GNF</span>
+                    <span className="text-accent font-black text-xl">80 000 GNF</span>
                   </div>
                 </div>
                 <div className="mt-4 pt-4 border-t border-white/10">
                   <p className="text-white/60 text-sm">
-                    ✓ Broderie ou impression<br/>
                     ✓ Designs personnalisés<br/>
                     ✓ Parfait pour cadeaux
                   </p>
@@ -547,7 +546,8 @@ export default function PersonnalisationPage() {
           </div>
         </div>
 
-        {/* Gallery Section */}
+        {/* Gallery Section - Dynamic */}
+        {galleryItems.length > 0 && (
         <div className={`${isMobile ? 'mb-12' : 'mb-20'}`}>
           <div className="text-center mb-10">
             <h2 className={`font-black text-neutral-900 mb-4 ${isMobile ? 'text-3xl' : 'text-5xl'}`}>
@@ -559,111 +559,26 @@ export default function PersonnalisationPage() {
           </div>
 
           <div className={`grid gap-6 ${isMobile ? 'grid-cols-2' : 'md:grid-cols-3 lg:grid-cols-4'}`}>
-            {/* Example 1 */}
-            <div className="group relative aspect-square bg-gradient-to-br from-neutral-200 to-neutral-300 rounded-2xl overflow-hidden hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-2xl">
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                <div className="text-white">
-                  <p className="font-black text-lg">T-shirt Logo</p>
-                  <p className="text-sm">Impression numérique</p>
+            {galleryItems.map((item) => (
+              <div key={item.id} className="group relative aspect-square bg-gradient-to-br from-neutral-200 to-neutral-300 rounded-2xl overflow-hidden hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-2xl">
+                {item.image_url && (
+                  <img 
+                    src={item.image_url} 
+                    alt={item.title}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+                  <div className="text-white">
+                    <p className="font-black text-lg">{item.title}</p>
+                    <p className="text-sm">{item.subtitle}</p>
+                  </div>
                 </div>
               </div>
-              <div className="absolute inset-0 flex items-center justify-center text-6xl">
-                👕
-              </div>
-            </div>
-
-            {/* Example 2 */}
-            <div className="group relative aspect-square bg-gradient-to-br from-neutral-200 to-neutral-300 rounded-2xl overflow-hidden hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-2xl">
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                <div className="text-white">
-                  <p className="font-black text-lg">Hoodie Custom</p>
-                  <p className="text-sm">Design personnalisé</p>
-                </div>
-              </div>
-              <div className="absolute inset-0 flex items-center justify-center text-6xl">
-                🧥
-              </div>
-            </div>
-
-            {/* Example 3 */}
-            <div className="group relative aspect-square bg-gradient-to-br from-neutral-200 to-neutral-300 rounded-2xl overflow-hidden hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-2xl">
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                <div className="text-white">
-                  <p className="font-black text-lg">Casquette Brodée</p>
-                  <p className="text-sm">Broderie premium</p>
-                </div>
-              </div>
-              <div className="absolute inset-0 flex items-center justify-center text-6xl">
-                🧢
-              </div>
-            </div>
-
-            {/* Example 4 */}
-            <div className="group relative aspect-square bg-gradient-to-br from-neutral-200 to-neutral-300 rounded-2xl overflow-hidden hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-2xl">
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                <div className="text-white">
-                  <p className="font-black text-lg">Survêtement Équipe</p>
-                  <p className="text-sm">Uniformes sportifs</p>
-                </div>
-              </div>
-              <div className="absolute inset-0 flex items-center justify-center text-6xl">
-                🏃
-              </div>
-            </div>
-
-            {/* Example 5 */}
-            <div className="group relative aspect-square bg-gradient-to-br from-neutral-200 to-neutral-300 rounded-2xl overflow-hidden hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-2xl">
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                <div className="text-white">
-                  <p className="font-black text-lg">T-shirt Bootleg</p>
-                  <p className="text-sm">Style vintage</p>
-                </div>
-              </div>
-              <div className="absolute inset-0 flex items-center justify-center text-6xl">
-                🎸
-              </div>
-            </div>
-
-            {/* Example 6 */}
-            <div className="group relative aspect-square bg-gradient-to-br from-neutral-200 to-neutral-300 rounded-2xl overflow-hidden hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-2xl">
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                <div className="text-white">
-                  <p className="font-black text-lg">Tote Bag</p>
-                  <p className="text-sm">Impression écologique</p>
-                </div>
-              </div>
-              <div className="absolute inset-0 flex items-center justify-center text-6xl">
-                👜
-              </div>
-            </div>
-
-            {/* Example 7 */}
-            <div className="group relative aspect-square bg-gradient-to-br from-neutral-200 to-neutral-300 rounded-2xl overflow-hidden hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-2xl">
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                <div className="text-white">
-                  <p className="font-black text-lg">Polo Entreprise</p>
-                  <p className="text-sm">Uniforme professionnel</p>
-                </div>
-              </div>
-              <div className="absolute inset-0 flex items-center justify-center text-6xl">
-                👔
-              </div>
-            </div>
-
-            {/* Example 8 */}
-            <div className="group relative aspect-square bg-gradient-to-br from-neutral-200 to-neutral-300 rounded-2xl overflow-hidden hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-2xl">
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                <div className="text-white">
-                  <p className="font-black text-lg">Bonnet Personnalisé</p>
-                  <p className="text-sm">Broderie 3D</p>
-                </div>
-              </div>
-              <div className="absolute inset-0 flex items-center justify-center text-6xl">
-                🎩
-              </div>
-            </div>
+            ))}
           </div>
         </div>
+        )}
 
         {/* Final CTA */}
         <div className="relative bg-gradient-to-br from-black via-neutral-900 to-black rounded-3xl overflow-hidden p-12 text-center">

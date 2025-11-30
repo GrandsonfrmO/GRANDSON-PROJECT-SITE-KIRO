@@ -2149,6 +2149,104 @@ app.post('/api/admin/pages', authenticateAdmin, async (req, res) => {
   }
 });
 
+// ============ CUSTOMIZATION GALLERY ROUTES ============
+
+// GET /api/customization-gallery - Public endpoint
+app.get('/api/customization-gallery', async (req, res) => {
+  try {
+    const { data: items, error } = await supabase
+      .from('customization_gallery')
+      .select('*')
+      .eq('is_active', true)
+      .order('display_order', { ascending: true });
+
+    if (error) {
+      console.error('❌ Error fetching gallery:', error);
+      return res.json({ success: true, data: { items: [] } });
+    }
+
+    res.json({ success: true, data: { items: items || [] } });
+  } catch (error) {
+    console.error('❌ Gallery error:', error);
+    res.json({ success: true, data: { items: [] } });
+  }
+});
+
+// POST /api/admin/customization-gallery - Admin create/update
+app.post('/api/admin/customization-gallery', authenticateAdmin, async (req, res) => {
+  try {
+    const { id, title, subtitle, image_url, display_order, is_active } = req.body;
+
+    if (!title || !image_url) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Titre et image requis' }
+      });
+    }
+
+    const itemData = {
+      title,
+      subtitle: subtitle || '',
+      image_url,
+      display_order: display_order || 0,
+      is_active: is_active !== false,
+      updated_at: new Date().toISOString()
+    };
+
+    let result;
+    if (id) {
+      // Update
+      const { data, error } = await supabase
+        .from('customization_gallery')
+        .update(itemData)
+        .eq('id', id)
+        .select()
+        .single();
+      result = { data, error };
+    } else {
+      // Insert
+      const { data, error } = await supabase
+        .from('customization_gallery')
+        .insert([itemData])
+        .select()
+        .single();
+      result = { data, error };
+    }
+
+    if (result.error) {
+      console.error('❌ Error saving gallery item:', result.error);
+      return res.status(500).json({ success: false, error: { message: result.error.message } });
+    }
+
+    res.json({ success: true, data: result.data });
+  } catch (error) {
+    console.error('❌ Save gallery error:', error);
+    res.status(500).json({ success: false, error: { message: 'Erreur serveur' } });
+  }
+});
+
+// DELETE /api/admin/customization-gallery/:id - Admin delete
+app.delete('/api/admin/customization-gallery/:id', authenticateAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { error } = await supabase
+      .from('customization_gallery')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('❌ Error deleting gallery item:', error);
+      return res.status(500).json({ success: false, error: { message: error.message } });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('❌ Delete gallery error:', error);
+    res.status(500).json({ success: false, error: { message: 'Erreur serveur' } });
+  }
+});
+
 // ============ MARKETING ROUTES - DISABLED ============
 // Marketing routes have been removed
 
