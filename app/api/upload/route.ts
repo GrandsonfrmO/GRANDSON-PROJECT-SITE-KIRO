@@ -24,10 +24,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file size (5MB max)
-    if (file.size > 5 * 1024 * 1024) {
+    // Validate file size (10MB max - les images sont compressées côté client)
+    if (file.size > 10 * 1024 * 1024) {
       return NextResponse.json(
-        { success: false, error: { message: 'Le fichier est trop volumineux (max 5MB)' } },
+        { success: false, error: { message: 'Le fichier est trop volumineux (max 10MB)' } },
         { status: 400 }
       );
     }

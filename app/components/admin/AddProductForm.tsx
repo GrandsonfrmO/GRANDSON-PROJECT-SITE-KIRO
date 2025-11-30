@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { useToast } from './Toast';
+import { useToast, ToastManager } from './Toast';
 import ImagePreview from './ImagePreview';
+import { authStorage } from '@/app/lib/authStorage';
 
 interface Product {
   name: string;
@@ -21,7 +22,7 @@ interface AddProductFormProps {
 }
 
 export default function AddProductForm({ onProductCreated, onCancel }: AddProductFormProps) {
-  const { showSuccess, showError } = useToast();
+  const { toasts, removeToast, showSuccess, showError } = useToast();
   
   const [newProduct, setNewProduct] = useState<Product>({
     name: '',
@@ -196,19 +197,25 @@ export default function AddProductForm({ onProductCreated, onCancel }: AddProduc
     try {
       setIsUploading(true);
       
+      // Upload images first
       const imageUrls = await uploadImages();
       
+      // Formater les données pour Supabase (snake_case et types corrects)
       const productData = {
-        ...newProduct,
-        description: newProduct.description || '',
+        name: newProduct.name.trim(),
+        description: newProduct.description?.trim() || 'Aucune description',
         price: parseFloat(newProduct.price),
+        category: newProduct.category,
         stock: parseInt(newProduct.stock),
         sizes: newProduct.sizes.length > 0 ? newProduct.sizes : ['Unique'],
-        images: [...newProduct.images, ...imageUrls]
+        colors: newProduct.colors.length > 0 ? newProduct.colors : [],
+        images: imageUrls.length > 0 ? imageUrls : newProduct.images,
+        is_active: true
       };
+      
+      console.log('📦 Données produit à envoyer:', productData);
 
-      // Import authStorage at the top of the file
-      const { authStorage } = await import('@/app/lib/authStorage');
+      // Get token from authStorage (imported at top of file)
       const token = authStorage.getToken();
       
       if (!token) {
@@ -230,12 +237,32 @@ export default function AddProductForm({ onProductCreated, onCancel }: AddProduc
         resetForm();
         onProductCreated();
       } else {
-        const error = await response.json();
-        showError(error.error?.message || 'Erreur lors de la création du produit');
+        // Essayer de parser la réponse JSON, sinon utiliser le texte brut
+        let errorMsg = 'Erreur lors de la création du produit';
+        try {
+          const errorData = await response.json();
+          console.error('❌ Erreur création produit:', errorData);
+          errorMsg = errorData.error?.message || errorMsg;
+        } catch (parseError) {
+          console.error('❌ Erreur parsing réponse:', parseError);
+          const textResponse = await response.text();
+          console.error('Réponse brute:', textResponse);
+          errorMsg = `Erreur serveur (${response.status})`;
+        }
+        showError(errorMsg);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Erreur création produit:', error);
-      showError('Erreur lors de la création du produit');
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+      
+      // Messages d'erreur plus explicites
+      if (errorMessage.includes('fetch') || errorMessage.includes('network')) {
+        showError('Erreur de connexion au serveur. Vérifiez que le backend est démarré.');
+      } else if (errorMessage.includes('timeout')) {
+        showError('Le serveur met trop de temps à répondre. Réessayez.');
+      } else {
+        showError(`Erreur: ${errorMessage}`);
+      }
     } finally {
       setIsUploading(false);
     }
@@ -258,6 +285,9 @@ export default function AddProductForm({ onProductCreated, onCancel }: AddProduc
 
   return (
     <div className="space-y-6">
+      {/* Toast Manager pour afficher les notifications */}
+      <ToastManager toasts={toasts} removeToast={removeToast} />
+      
       {/* Header Simple */}
       <div className="glass-card rounded-2xl p-6 border border-white/20">
         <div className="flex items-center justify-between">

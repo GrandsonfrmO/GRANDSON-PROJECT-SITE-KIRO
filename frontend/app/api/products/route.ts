@@ -196,15 +196,21 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(data, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ Create product API error:', error);
     
     // Message d'erreur plus détaillé
     let errorMessage = 'Erreur lors de la création du produit';
-    if (error.name === 'AbortError' || error.message?.includes('timeout')) {
-      errorMessage = 'Le serveur backend ne répond pas. Vérifiez qu\'il est démarré (npm run backend).';
-    } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = 'Impossible de se connecter au backend. Démarrez le serveur avec: npm run backend';
+    const errorObj = error as { name?: string; message?: string; code?: string };
+    
+    if (errorObj.name === 'AbortError' || errorObj.message?.includes('timeout')) {
+      errorMessage = 'Le serveur backend ne répond pas. Vérifiez qu\'il est démarré.';
+    } else if (errorObj.code === 'ECONNREFUSED' || errorObj.message?.includes('ECONNREFUSED')) {
+      errorMessage = 'Impossible de se connecter au backend. Le serveur n\'est pas démarré.';
+    } else if (errorObj.message?.includes('fetch failed')) {
+      errorMessage = 'Erreur de connexion au backend. Vérifiez que le serveur est accessible.';
+    } else if (errorObj.message) {
+      errorMessage = `Erreur: ${errorObj.message}`;
     }
     
     return NextResponse.json(

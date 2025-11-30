@@ -154,6 +154,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
+    console.log('📦 Création produit - données reçues:', JSON.stringify(body, null, 2));
+    
     // Get admin token from headers
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     
@@ -170,8 +172,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Forward to backend
+    // Forward to backend with timeout
     const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
+    
+    console.log('📡 Envoi vers backend:', backendUrl);
+    
     const response = await fetch(`${backendUrl}/api/admin/products`, {
       method: 'POST',
       headers: {
@@ -179,23 +184,41 @@ export async function POST(request: NextRequest) {
         'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify(body),
+      signal: AbortSignal.timeout(15000) // 15 secondes timeout
     });
 
     const data = await response.json();
+    
+    console.log('📬 Réponse backend:', response.status, JSON.stringify(data, null, 2));
 
     if (!response.ok) {
       return NextResponse.json(data, { status: response.status });
     }
 
     return NextResponse.json(data, { status: 201 });
-  } catch (error) {
-    console.error('Create product API error:', error);
+  } catch (error: unknown) {
+    console.error('❌ Create product API error:', error);
+    
+    // Message d'erreur plus détaillé
+    let errorMessage = 'Erreur lors de la création du produit';
+    const errorObj = error as { name?: string; message?: string; code?: string; cause?: { code?: string } };
+    
+    if (errorObj.name === 'AbortError' || errorObj.message?.includes('timeout')) {
+      errorMessage = 'Le serveur backend ne répond pas. Vérifiez qu\'il est démarré.';
+    } else if (errorObj.code === 'ECONNREFUSED' || errorObj.cause?.code === 'ECONNREFUSED' || errorObj.message?.includes('ECONNREFUSED')) {
+      errorMessage = 'Impossible de se connecter au backend. Le serveur n\'est pas démarré.';
+    } else if (errorObj.message?.includes('fetch failed')) {
+      errorMessage = 'Erreur de connexion au backend. Vérifiez que le serveur est accessible.';
+    } else if (errorObj.message) {
+      errorMessage = `Erreur: ${errorObj.message}`;
+    }
+    
     return NextResponse.json(
       {
         success: false,
         error: {
           code: 'INTERNAL_ERROR',
-          message: 'Erreur lors de la création du produit'
+          message: errorMessage
         }
       },
       { status: 500 }
