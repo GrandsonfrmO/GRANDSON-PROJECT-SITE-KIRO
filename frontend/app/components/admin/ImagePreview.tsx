@@ -104,12 +104,12 @@ export default function ImagePreview({
               {/* Overlay */}
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-200" />
               
-              {/* Actions */}
+              {/* Actions - Toujours visible */}
               {editable && (
-                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1">
+                <div className="absolute top-2 right-2 flex gap-1">
                   <button
                     onClick={() => onRemove(index)}
-                    className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold transition-colors"
+                    className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-lg font-bold transition-all shadow-lg hover:scale-110 active:scale-95"
                     title="Supprimer cette image"
                   >
                     ×
