@@ -279,75 +279,117 @@ export default function AddProductForm({ onProductCreated, onCancel }: AddProduc
       {/* Formulaire Simple - Tout sur une page */}
       <div className="glass-primary backdrop-blur-xl border border-white/20 rounded-2xl p-6">
         <div className="space-y-6">
-          {/* Informations de base */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Nom */}
-            <div className="md:col-span-2">
-              <label className="block text-white font-medium mb-2">Nom du produit *</label>
-              <input
-                type="text"
-                value={newProduct.name}
-                onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
-                className="input-glass w-full px-4 py-3 rounded-xl text-white placeholder-white/50"
-                placeholder="Ex: Boubou Traditionnel"
-              />
-            </div>
-
-            {/* Prix */}
-            <div>
-              <label className="block text-white font-medium mb-2">Prix (GNF) *</label>
-              <input
-                type="number"
-                value={newProduct.price}
-                onChange={(e) => setNewProduct({...newProduct, price: e.target.value})}
-                className="input-glass w-full px-4 py-3 rounded-xl text-white placeholder-white/50"
-                placeholder="85000"
-              />
-            </div>
-
-            {/* Stock */}
-            <div>
-              <label className="block text-white font-medium mb-2">Stock *</label>
-              <input
-                type="number"
-                value={newProduct.stock}
-                onChange={(e) => setNewProduct({...newProduct, stock: e.target.value})}
-                className="input-glass w-full px-4 py-3 rounded-xl text-white placeholder-white/50"
-                placeholder="25"
-              />
-            </div>
-
-            {/* Catégorie */}
-            <div className="md:col-span-2">
-              <label className="block text-white font-medium mb-2">Catégorie *</label>
-              <select
-                value={newProduct.category}
-                onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
-                className="input-glass w-full px-4 py-3 rounded-xl text-white bg-white/10 border border-white/20 focus:border-accent focus:ring-4 focus:ring-accent/20 transition-all duration-300"
+          {/* Images - EN PREMIER */}
+          <div>
+            <h4 className="text-white font-medium mb-4">📷 Images du produit</h4>
+            
+            {/* Zone d'upload simple */}
+            <div className="border-2 border-dashed border-white/30 rounded-xl p-6 text-center hover:border-white/50 transition-all">
+              <div className="text-4xl mb-2">📷</div>
+              <p className="text-white/70 mb-2">Cliquez pour ajouter des images</p>
+              <p className="text-white/50 text-xs mb-3">Max 15MB par image • Compression automatique</p>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="btn-glass px-4 py-2 text-white rounded-xl hover:scale-105 transition-all"
               >
-                <option value="" className="bg-gray-800">Sélectionner une catégorie</option>
-                {categories.map(cat => (
-                  <option key={cat} value={cat} className="bg-gray-800">{cat}</option>
-                ))}
-              </select>
+                Sélectionner
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={(e) => handleImageUpload(e.target.files)}
+                className="hidden"
+              />
             </div>
 
-            {/* Description */}
-            <div className="md:col-span-2">
-              <label className="block text-white font-medium mb-2">Description</label>
-              <textarea
-                value={newProduct.description}
-                onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
-                rows={3}
-                className="input-glass w-full px-4 py-3 rounded-xl text-white placeholder-white/50 resize-vertical bg-white/10 border border-white/20 focus:border-accent focus:ring-4 focus:ring-accent/20 transition-all duration-300"
-                placeholder="Description du produit..."
-              />
+            {/* Aperçu des images */}
+            {imagePreviewUrls.length > 0 && (
+              <div className="mt-4">
+                <ImagePreview
+                  images={imagePreviewUrls}
+                  onRemove={removeImage}
+                  maxImages={6}
+                  editable={true}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Informations de base */}
+          <div className="border-t border-white/10 pt-6">
+            <h4 className="text-white font-medium mb-4">📝 Informations du produit</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Nom */}
+              <div className="md:col-span-2">
+                <label className="block text-white font-medium mb-2">Nom du produit *</label>
+                <input
+                  type="text"
+                  value={newProduct.name}
+                  onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
+                  className="input-glass w-full px-4 py-3 rounded-xl text-white placeholder-white/50"
+                  placeholder="Ex: Boubou Traditionnel"
+                />
+              </div>
+
+              {/* Prix */}
+              <div>
+                <label className="block text-white font-medium mb-2">Prix (GNF) *</label>
+                <input
+                  type="number"
+                  value={newProduct.price}
+                  onChange={(e) => setNewProduct({...newProduct, price: e.target.value})}
+                  className="input-glass w-full px-4 py-3 rounded-xl text-white placeholder-white/50"
+                  placeholder="85000"
+                />
+              </div>
+
+              {/* Stock */}
+              <div>
+                <label className="block text-white font-medium mb-2">Stock *</label>
+                <input
+                  type="number"
+                  value={newProduct.stock}
+                  onChange={(e) => setNewProduct({...newProduct, stock: e.target.value})}
+                  className="input-glass w-full px-4 py-3 rounded-xl text-white placeholder-white/50"
+                  placeholder="25"
+                />
+              </div>
+
+              {/* Catégorie */}
+              <div className="md:col-span-2">
+                <label className="block text-white font-medium mb-2">Catégorie *</label>
+                <select
+                  value={newProduct.category}
+                  onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
+                  className="input-glass w-full px-4 py-3 rounded-xl text-white bg-white/10 border border-white/20 focus:border-accent focus:ring-4 focus:ring-accent/20 transition-all duration-300"
+                >
+                  <option value="" className="bg-gray-800">Sélectionner une catégorie</option>
+                  {categories.map(cat => (
+                    <option key={cat} value={cat} className="bg-gray-800">{cat}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Description */}
+              <div className="md:col-span-2">
+                <label className="block text-white font-medium mb-2">Description</label>
+                <textarea
+                  value={newProduct.description}
+                  onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
+                  rows={3}
+                  className="input-glass w-full px-4 py-3 rounded-xl text-white placeholder-white/50 resize-vertical bg-white/10 border border-white/20 focus:border-accent focus:ring-4 focus:ring-accent/20 transition-all duration-300"
+                  placeholder="Description du produit..."
+                />
+              </div>
             </div>
           </div>
 
           {/* Variantes (optionnel) */}
           <div className="border-t border-white/10 pt-6">
-            <h4 className="text-white font-medium mb-4">Variantes (optionnel)</h4>
+            <h4 className="text-white font-medium mb-4">🎨 Variantes (optionnel)</h4>
             
             {/* Tailles */}
             <div className="mb-4">
@@ -429,45 +471,6 @@ export default function AddProductForm({ onProductCreated, onCancel }: AddProduc
                 </p>
               )}
             </div>
-          </div>
-
-          {/* Images */}
-          <div className="border-t border-white/10 pt-6">
-            <h4 className="text-white font-medium mb-4">Images</h4>
-            
-            {/* Zone d'upload simple */}
-            <div className="border-2 border-dashed border-white/30 rounded-xl p-6 text-center hover:border-white/50 transition-all">
-              <div className="text-4xl mb-2">📷</div>
-              <p className="text-white/70 mb-2">Cliquez pour ajouter des images</p>
-              <p className="text-white/50 text-xs mb-3">Max 15MB par image • Compression automatique</p>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="btn-glass px-4 py-2 text-white rounded-xl hover:scale-105 transition-all"
-              >
-                Sélectionner
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={(e) => handleImageUpload(e.target.files)}
-                className="hidden"
-              />
-            </div>
-
-            {/* Aperçu des images */}
-            {imagePreviewUrls.length > 0 && (
-              <div className="mt-4">
-                <ImagePreview
-                  images={imagePreviewUrls}
-                  onRemove={removeImage}
-                  maxImages={6}
-                  editable={true}
-                />
-              </div>
-            )}
           </div>
 
           {/* Boutons d'action */}
