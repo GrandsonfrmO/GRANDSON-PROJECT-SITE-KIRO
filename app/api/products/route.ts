@@ -170,12 +170,14 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseAdmin();
 
     // Create product directly in Supabase
+    const priceValue = parseFloat(price);
     const { data: product, error } = await supabase
       .from('products')
       .insert([{
         name: name.trim(),
         description: description || '',
-        price: parseFloat(price),
+        price: priceValue,
+        base_price: priceValue, // Colonne requise dans Supabase
         category,
         sizes: sizes && sizes.length > 0 ? (Array.isArray(sizes) ? sizes : [sizes]) : ['Unique'],
         images: Array.isArray(images) ? images : (images ? [images] : []),
