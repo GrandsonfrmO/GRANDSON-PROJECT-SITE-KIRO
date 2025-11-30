@@ -126,6 +126,7 @@ export default function PersonnalisationPage() {
             </h2>
 
             <div className={`grid gap-3 ${isMobile ? 'grid-cols-2' : 'grid-cols-3'}`}>
+              {/* T-shirts */}
               <div className="bg-white/10 rounded-xl p-3">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xl">👕</span>
@@ -134,6 +135,7 @@ export default function PersonnalisationPage() {
                 <p className={`text-accent font-black ${isMobile ? 'text-sm' : 'text-base'}`}>80-120K</p>
               </div>
 
+              {/* Bootleg */}
               <div className="bg-white/10 rounded-xl p-3">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xl">🎸</span>
@@ -142,6 +144,7 @@ export default function PersonnalisationPage() {
                 <p className={`text-green-400 font-black ${isMobile ? 'text-sm' : 'text-base'}`}>120-150K</p>
               </div>
 
+              {/* Pulls */}
               <div className="bg-white/10 rounded-xl p-3">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xl">🧥</span>
@@ -150,6 +153,7 @@ export default function PersonnalisationPage() {
                 <p className={`text-accent font-black ${isMobile ? 'text-sm' : 'text-base'}`}>180-220K</p>
               </div>
 
+              {/* Survêtements */}
               <div className="bg-white/10 rounded-xl p-3">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xl">🏃</span>
@@ -158,6 +162,7 @@ export default function PersonnalisationPage() {
                 <p className={`text-green-400 font-black ${isMobile ? 'text-sm' : 'text-base'}`}>280-350K</p>
               </div>
 
+              {/* Accessoires */}
               <div className="bg-white/10 rounded-xl p-3">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xl">🧢</span>
@@ -166,6 +171,7 @@ export default function PersonnalisationPage() {
                 <p className={`text-accent font-black ${isMobile ? 'text-sm' : 'text-base'}`}>80K</p>
               </div>
 
+              {/* Délai */}
               <div className="bg-green-500/20 rounded-xl p-3 text-center">
                 <span className="text-xl block">⏱️</span>
                 <p className={`text-green-400 font-black ${isMobile ? 'text-sm' : 'text-base'}`}>2-3 jours</p>
