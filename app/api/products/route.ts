@@ -1,64 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
-// Données de démonstration
-const demoProducts = [
-  {
-    id: '1',
-    name: 'T-Shirt Grandson Classic',
-    description: 'T-shirt premium en coton bio avec logo Grandson Project',
-    price: 45000,
-    category: 'T-Shirts',
-    sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
-    images: ['/placeholder-product.svg'],
-    colors: ['Noir', 'Blanc', 'Gris', 'Rouge', 'Bleu'],
-    stock: 15,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: '2',
-    name: 'Casquette Streetwear',
-    description: 'Casquette ajustable avec broderie exclusive',
-    price: 25000,
-    category: 'Accessoires',
-    sizes: ['Unique'],
-    images: ['/placeholder-product.svg'],
-    colors: ['Noir', 'Rouge', 'Blanc', 'Bleu'],
-    stock: 8,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: '3',
-    name: 'Hoodie Urban Style',
-    description: 'Sweat à capuche confortable pour un style urbain',
-    price: 75000,
-    category: 'Sweats',
-    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-    images: ['/placeholder-product.svg'],
-    colors: ['Noir', 'Gris', 'Marine'],
-    stock: 12,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: '4',
-    name: 'Jean Slim Fit',
-    description: 'Jean moderne avec coupe ajustée',
-    price: 85000,
-    category: 'Pantalons',
-    sizes: ['28', '30', '32', '34', '36'],
-    images: ['/placeholder-product.svg'],
-    colors: ['Bleu', 'Noir'],
-    stock: 6,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  }
-];
+// Créer un client Supabase avec la clé service pour les opérations admin
+const getSupabaseAdmin = () => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  
+  return createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
+};
+
+// Transform product data from snake_case to camelCase
+const transformProduct = (product: any) => {
+  if (!product) return null;
+  return {
+    ...product,
+    isActive: product.is_active,
+    createdAt: product.created_at,
+    updatedAt: product.updated_at
+  };
+};
 
 // GET /api/products - Public endpoint for product listing
 export async function GET(request: NextRequest) {
@@ -68,61 +33,36 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
 
-    // Essayer de se connecter au backend d'abord
-    try {
-      const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
-      const queryString = new URLSearchParams({
-        ...(category && { category }),
-        page: page.toString(),
-        limit: limit.toString()
-      }).toString();
+    const supabase = getSupabaseAdmin();
 
-      const response = await fetch(`${backendUrl}/api/products?${queryString}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        // Timeout rapide pour éviter d'attendre trop longtemps
-        signal: AbortSignal.timeout(2000)
-      });
+    let query = supabase
+      .from('products')
+      .select('*')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
 
-      if (response.ok) {
-        const data = await response.json();
-        // Transform backend response to match expected frontend format
-        if (data.success && data.data && data.data.products) {
-          return NextResponse.json({
-            success: true,
-            products: data.data.products,
-            pagination: data.data.pagination
-          });
-        }
-        return NextResponse.json(data);
-      }
-    } catch (backendError: any) {
-      console.error('Backend error:', backendError.message || backendError);
-      // Retourner l'erreur au lieu des données de démonstration
+    if (category) {
+      query = query.eq('category', category);
+    }
+
+    const { data: products, error } = await query;
+
+    if (error) {
+      console.error('❌ Supabase error:', error);
       return NextResponse.json({
         success: false,
         error: {
-          code: 'BACKEND_ERROR',
-          message: 'Impossible de se connecter à la base de données. Vérifiez les permissions RLS dans Supabase.'
+          code: 'DATABASE_ERROR',
+          message: error.message
         },
         products: []
-      });
+      }, { status: 500 });
     }
 
-    // Fallback - ne devrait pas arriver si le backend répond
-    let filteredProducts = demoProducts;
-
-    // Filtrer par catégorie si spécifiée
-    if (category) {
-      filteredProducts = demoProducts.filter(p => p.category === category);
-    }
-
-    // Pagination simple
+    // Pagination
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
-    const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+    const paginatedProducts = (products || []).slice(startIndex, endIndex).map(transformProduct);
 
     return NextResponse.json({
       success: true,
@@ -130,8 +70,8 @@ export async function GET(request: NextRequest) {
       pagination: {
         page,
         limit,
-        total: filteredProducts.length,
-        totalPages: Math.ceil(filteredProducts.length / limit)
+        total: products?.length || 0,
+        totalPages: Math.ceil((products?.length || 0) / limit)
       }
     });
   } catch (error) {
@@ -172,53 +112,111 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Forward to backend with timeout
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
-    
-    console.log('📡 Envoi vers backend:', backendUrl);
-    
-    const response = await fetch(`${backendUrl}/api/admin/products`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(15000) // 15 secondes timeout
-    });
+    // Validation
+    const { name, price, category, stock, description, sizes, images, colors, is_active } = body;
 
-    const data = await response.json();
-    
-    console.log('📬 Réponse backend:', response.status, JSON.stringify(data, null, 2));
-
-    if (!response.ok) {
-      return NextResponse.json(data, { status: response.status });
+    if (!name || !price || !category || stock === undefined) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Nom, prix, catégorie et stock sont requis'
+          }
+        },
+        { status: 400 }
+      );
     }
 
-    return NextResponse.json(data, { status: 201 });
+    if (name.length < 2 || name.length > 100) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Le nom du produit doit contenir entre 2 et 100 caractères'
+          }
+        },
+        { status: 400 }
+      );
+    }
+
+    if (parseFloat(price) <= 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Le prix doit être positif'
+          }
+        },
+        { status: 400 }
+      );
+    }
+
+    if (parseInt(stock) < 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Le stock ne peut pas être négatif'
+          }
+        },
+        { status: 400 }
+      );
+    }
+
+    const supabase = getSupabaseAdmin();
+
+    // Create product directly in Supabase
+    const { data: product, error } = await supabase
+      .from('products')
+      .insert([{
+        name: name.trim(),
+        description: description || '',
+        price: parseFloat(price),
+        category,
+        sizes: sizes && sizes.length > 0 ? (Array.isArray(sizes) ? sizes : [sizes]) : ['Unique'],
+        images: Array.isArray(images) ? images : (images ? [images] : []),
+        colors: colors && colors.length > 0 ? (Array.isArray(colors) ? colors : [colors]) : null,
+        stock: parseInt(stock),
+        is_active: is_active !== undefined ? is_active : true
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Supabase create error:', error);
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'DATABASE_ERROR',
+            message: error.message
+          }
+        },
+        { status: 500 }
+      );
+    }
+
+    console.log('✅ Produit créé:', product.id);
+
+    return NextResponse.json({
+      success: true,
+      data: { product: transformProduct(product) }
+    }, { status: 201 });
+
   } catch (error: unknown) {
     console.error('❌ Create product API error:', error);
-    
-    // Message d'erreur plus détaillé
-    let errorMessage = 'Erreur lors de la création du produit';
-    const errorObj = error as { name?: string; message?: string; code?: string; cause?: { code?: string } };
-    
-    if (errorObj.name === 'AbortError' || errorObj.message?.includes('timeout')) {
-      errorMessage = 'Le serveur backend ne répond pas. Vérifiez qu\'il est démarré.';
-    } else if (errorObj.code === 'ECONNREFUSED' || errorObj.cause?.code === 'ECONNREFUSED' || errorObj.message?.includes('ECONNREFUSED')) {
-      errorMessage = 'Impossible de se connecter au backend. Le serveur n\'est pas démarré.';
-    } else if (errorObj.message?.includes('fetch failed')) {
-      errorMessage = 'Erreur de connexion au backend. Vérifiez que le serveur est accessible.';
-    } else if (errorObj.message) {
-      errorMessage = `Erreur: ${errorObj.message}`;
-    }
+    const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
     
     return NextResponse.json(
       {
         success: false,
         error: {
           code: 'INTERNAL_ERROR',
-          message: errorMessage
+          message: `Erreur lors de la création du produit: ${errorMessage}`
         }
       },
       { status: 500 }
