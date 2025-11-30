@@ -138,8 +138,10 @@ export default function AddProductForm({ onProductCreated, onCancel }: AddProduc
       
       const productData = {
         ...newProduct,
+        description: newProduct.description || '',
         price: parseFloat(newProduct.price),
         stock: parseInt(newProduct.stock),
+        sizes: newProduct.sizes.length > 0 ? newProduct.sizes : ['Unique'],
         images: [...newProduct.images, ...imageUrls]
       };
 

@@ -455,13 +455,13 @@ app.post('/api/admin/products', authenticateAdmin, async (req, res) => {
 
     console.log('📦 Creating new product:', name);
 
-    // Validation
-    if (!name || !description || !price || !category || !sizes || stock === undefined) {
+    // Validation - seuls name, price, category et stock sont obligatoires
+    if (!name || !price || !category || stock === undefined) {
       return res.status(400).json({
         success: false,
         error: {
           code: 'VALIDATION_ERROR',
-          message: 'Tous les champs requis doivent être remplis'
+          message: 'Nom, prix, catégorie et stock sont requis'
         }
       });
     }
@@ -501,10 +501,10 @@ app.post('/api/admin/products', authenticateAdmin, async (req, res) => {
       .from('products')
       .insert([{
         name,
-        description,
+        description: description || '',
         price: parseFloat(price),
         category,
-        sizes: Array.isArray(sizes) ? sizes : [sizes],
+        sizes: sizes && sizes.length > 0 ? (Array.isArray(sizes) ? sizes : [sizes]) : ['Unique'],
         images: Array.isArray(images) ? images : (images ? [images] : []),
         colors: colors && colors.length > 0 ? (Array.isArray(colors) ? colors : [colors]) : null,
         stock: parseInt(stock),
