@@ -169,7 +169,10 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabaseAdmin();
 
-    // Récupérer un seller_id existant depuis un produit existant
+    // Récupérer un seller_id depuis la table users (foreign key vers public.users.id)
+    let sellerId: string | null = null;
+    
+    // D'abord essayer de récupérer depuis un produit existant
     const { data: existingProduct } = await supabase
       .from('products')
       .select('seller_id')
@@ -177,35 +180,24 @@ export async function POST(request: NextRequest) {
       .limit(1)
       .single();
     
-    // Utiliser le seller_id existant ou essayer avec l'admin
-    let sellerId = existingProduct?.seller_id;
+    sellerId = existingProduct?.seller_id;
     
     if (!sellerId) {
-      // Essayer de récupérer depuis la table sellers si elle existe
-      const { data: sellerData } = await supabase
-        .from('sellers')
+      // Essayer de récupérer depuis la table users
+      const { data: userData } = await supabase
+        .from('users')
         .select('id')
         .limit(1)
         .single();
-      sellerId = sellerData?.id;
-    }
-    
-    if (!sellerId) {
-      // Dernier recours: utiliser l'admin id
-      const { data: adminData } = await supabase
-        .from('admins')
-        .select('id')
-        .limit(1)
-        .single();
-      sellerId = adminData?.id;
+      sellerId = userData?.id;
     }
     
     if (!sellerId) {
       return NextResponse.json({
         success: false,
         error: {
-          code: 'SELLER_NOT_FOUND',
-          message: 'Aucun vendeur trouvé. Veuillez créer un vendeur dans Supabase d\'abord.'
+          code: 'USER_NOT_FOUND',
+          message: 'Aucun utilisateur trouvé dans la table users. Créez un utilisateur dans Supabase d\'abord.'
         }
       }, { status: 400 });
     }
