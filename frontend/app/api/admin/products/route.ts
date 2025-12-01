@@ -17,8 +17,51 @@ const getSupabaseAdmin = () => {
 // Transform product data from snake_case to camelCase
 const transformProduct = (product: any) => {
   if (!product) return null;
+  
+  // Parse images if it's a string
+  let images = product.images;
+  if (typeof images === 'string') {
+    try {
+      images = JSON.parse(images);
+    } catch (e) {
+      images = [images];
+    }
+  }
+  if (!Array.isArray(images)) {
+    images = images ? [images] : [];
+  }
+  
+  // Parse sizes if it's a string
+  let sizes = product.sizes;
+  if (typeof sizes === 'string') {
+    try {
+      sizes = JSON.parse(sizes);
+    } catch (e) {
+      sizes = [sizes];
+    }
+  }
+  if (!Array.isArray(sizes)) {
+    sizes = sizes ? [sizes] : ['Unique'];
+  }
+  
+  // Parse colors if it's a string
+  let colors = product.colors;
+  if (typeof colors === 'string') {
+    try {
+      colors = JSON.parse(colors);
+    } catch (e) {
+      colors = [colors];
+    }
+  }
+  if (colors && !Array.isArray(colors)) {
+    colors = [colors];
+  }
+  
   return {
     ...product,
+    images,
+    sizes,
+    colors,
     isActive: product.is_active,
     createdAt: product.created_at,
     updatedAt: product.updated_at
