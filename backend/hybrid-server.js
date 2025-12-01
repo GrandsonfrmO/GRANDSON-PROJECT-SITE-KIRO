@@ -497,12 +497,14 @@ app.post('/api/admin/products', authenticateAdmin, async (req, res) => {
     }
 
     // Create product
+    const priceValue = parseFloat(price);
     const { data: product, error } = await supabase
       .from('products')
       .insert([{
         name,
         description: description || '',
-        price: parseFloat(price),
+        price: priceValue,
+        base_price: priceValue, // Ajout de base_price (même valeur que price)
         category,
         sizes: sizes && sizes.length > 0 ? (Array.isArray(sizes) ? sizes : [sizes]) : ['Unique'],
         images: Array.isArray(images) ? images : (images ? [images] : []),

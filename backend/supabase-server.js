@@ -556,10 +556,12 @@ app.post('/api/admin/products', authenticateToken, async (req, res) => {
     }
     
     // Préparer les données pour Supabase
+    const priceValue = parseFloat(req.body.price);
     const productData = {
       name: req.body.name.trim(),
       description: req.body.description || 'Aucune description',
-      price: parseFloat(req.body.price),
+      price: priceValue,
+      base_price: priceValue, // Ajout de base_price (même valeur que price)
       category: req.body.category,
       stock: parseInt(req.body.stock) || 0,
       sizes: req.body.sizes || ['Unique'],

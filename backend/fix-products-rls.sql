@@ -1,65 +1,100 @@
 -- ============================================
--- Script de correction RLS pour la table products
+-- Script COMPLET de correction pour la table products
 -- Exécuter dans Supabase SQL Editor
 -- ============================================
 
--- 1. D'abord, voir les policies existantes sur products
-SELECT 
-  schemaname,
-  tablename,
-  policyname,
-  permissive,
-  roles,
-  cmd,
-  qual,
-  with_check
-FROM pg_policies 
-WHERE tablename = 'products';
+-- ============================================
+-- ÉTAPE 1 : DIAGNOSTIC - Identifier le problème
+-- ============================================
 
--- 2. Voir les triggers sur products
+-- 1.1 Voir TOUS les triggers sur la table products
+SELECT 
+  tgname as trigger_name,
+  tgtype,
+  proname as function_name
+FROM pg_trigger t
+JOIN pg_proc p ON t.tgfoid = p.oid
+JOIN pg_class c ON t.tgrelid = c.oid
+WHERE c.relname = 'products';
+
+-- 1.2 Voir les triggers avec plus de détails
 SELECT 
   trigger_name,
   event_manipulation,
-  action_statement
+  event_object_table,
+  action_statement,
+  action_timing
 FROM information_schema.triggers 
 WHERE event_object_table = 'products';
 
--- 3. Vérifier si la table users existe (elle ne devrait pas dans votre schéma)
-SELECT EXISTS (
-  SELECT FROM information_schema.tables 
-  WHERE table_schema = 'public' 
-  AND table_name = 'users'
-) as users_table_exists;
+-- 1.3 Vérifier si la table users existe
+SELECT table_name 
+FROM information_schema.tables 
+WHERE table_schema = 'public' 
+AND table_name = 'users';
+
+-- 1.4 Voir toutes les fonctions qui référencent 'users'
+SELECT 
+  proname as function_name,
+  prosrc as function_body
+FROM pg_proc
+WHERE prosrc LIKE '%users%'
+AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public');
 
 -- ============================================
--- SOLUTION : Désactiver RLS ou créer des policies permissives
+-- ÉTAPE 2 : SUPPRIMER LES TRIGGERS PROBLÉMATIQUES
 -- ============================================
 
--- Option A : Désactiver complètement RLS sur products (plus simple)
+-- Supprimer TOUS les triggers sur products (sauf updated_at)
+DO $$
+DECLARE
+  trigger_rec RECORD;
+BEGIN
+  FOR trigger_rec IN 
+    SELECT tgname 
+    FROM pg_trigger t
+    JOIN pg_class c ON t.tgrelid = c.oid
+    WHERE c.relname = 'products'
+    AND tgname NOT LIKE '%updated_at%'
+    AND NOT tgisinternal
+  LOOP
+    EXECUTE 'DROP TRIGGER IF EXISTS ' || trigger_rec.tgname || ' ON products';
+    RAISE NOTICE 'Dropped trigger: %', trigger_rec.tgname;
+  END LOOP;
+END $$;
+
+-- ============================================
+-- ÉTAPE 3 : DÉSACTIVER RLS
+-- ============================================
+
 ALTER TABLE products DISABLE ROW LEVEL SECURITY;
 
--- Option B : Si vous voulez garder RLS mais permettre toutes les opérations
--- (décommentez les lignes ci-dessous si vous préférez cette option)
-
--- Supprimer toutes les policies existantes sur products
--- DROP POLICY IF EXISTS "Enable read access for all users" ON products;
--- DROP POLICY IF EXISTS "Enable insert for authenticated users only" ON products;
--- DROP POLICY IF EXISTS "Enable update for authenticated users only" ON products;
--- DROP POLICY IF EXISTS "Enable delete for authenticated users only" ON products;
--- DROP POLICY IF EXISTS "products_select_policy" ON products;
--- DROP POLICY IF EXISTS "products_insert_policy" ON products;
--- DROP POLICY IF EXISTS "products_update_policy" ON products;
--- DROP POLICY IF EXISTS "products_delete_policy" ON products;
-
--- Créer une policy permissive pour toutes les opérations
--- CREATE POLICY "Allow all operations on products" ON products
--- FOR ALL
--- USING (true)
--- WITH CHECK (true);
+-- Supprimer toutes les policies sur products
+DO $$
+DECLARE
+  policy_rec RECORD;
+BEGIN
+  FOR policy_rec IN 
+    SELECT policyname 
+    FROM pg_policies 
+    WHERE tablename = 'products'
+  LOOP
+    EXECUTE 'DROP POLICY IF EXISTS "' || policy_rec.policyname || '" ON products';
+    RAISE NOTICE 'Dropped policy: %', policy_rec.policyname;
+  END LOOP;
+END $$;
 
 -- ============================================
--- Vérification après correction
+-- ÉTAPE 4 : VÉRIFICATION
 -- ============================================
+
+-- Vérifier qu'il n'y a plus de triggers problématiques
+SELECT 
+  tgname as remaining_triggers
+FROM pg_trigger t
+JOIN pg_class c ON t.tgrelid = c.oid
+WHERE c.relname = 'products'
+AND NOT tgisinternal;
 
 -- Vérifier que RLS est désactivé
 SELECT 
@@ -68,10 +103,14 @@ SELECT
 FROM pg_class
 WHERE relname = 'products';
 
--- Tester une insertion simple
--- INSERT INTO products (name, description, price, category, stock)
--- VALUES ('Test Product', 'Test description', 10000, 'Tshirt', 5)
--- RETURNING *;
+-- ============================================
+-- ÉTAPE 5 : TEST D'INSERTION
+-- ============================================
 
--- Si le test fonctionne, supprimer le produit test
--- DELETE FROM products WHERE name = 'Test Product';
+-- Tester une insertion
+INSERT INTO products (name, description, price, category, stock, sizes, images, is_active)
+VALUES ('TEST-PRODUCT-DELETE-ME', 'Test', 10000, 'Tshirt', 5, '["M"]', '[]', true)
+RETURNING id, name;
+
+-- Si ça fonctionne, supprimer le produit test
+DELETE FROM products WHERE name = 'TEST-PRODUCT-DELETE-ME';
