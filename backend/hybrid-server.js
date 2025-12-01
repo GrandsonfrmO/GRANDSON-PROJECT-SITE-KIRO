@@ -528,7 +528,6 @@ app.post('/api/admin/products', authenticateAdmin, async (req, res) => {
         colors: colorsValue,
         stock: stockValue,
         total_stock: stockValue,
-        seller_id: 'admin', // Valeur par défaut pour seller_id (NOT NULL)
         is_active: true
       }])
       .select()

@@ -581,7 +581,6 @@ app.post('/api/admin/products', authenticateToken, async (req, res) => {
       sizes: sizesValue,
       colors: colorsValue,
       images: imagesValue,
-      seller_id: 'admin', // Valeur par défaut pour seller_id (NOT NULL)
       is_active: req.body.is_active !== false
     };
     
