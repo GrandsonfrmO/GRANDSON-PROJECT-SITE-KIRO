@@ -169,15 +169,46 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabaseAdmin();
 
-    // Récupérer le premier admin comme seller_id
-    const { data: adminData } = await supabase
-      .from('admins')
-      .select('id')
+    // Récupérer un seller_id existant depuis un produit existant
+    const { data: existingProduct } = await supabase
+      .from('products')
+      .select('seller_id')
+      .not('seller_id', 'is', null)
       .limit(1)
       .single();
     
-    // Utiliser l'ID admin ou un UUID par défaut
-    const sellerId = adminData?.id || 'admin-default';
+    // Utiliser le seller_id existant ou essayer avec l'admin
+    let sellerId = existingProduct?.seller_id;
+    
+    if (!sellerId) {
+      // Essayer de récupérer depuis la table sellers si elle existe
+      const { data: sellerData } = await supabase
+        .from('sellers')
+        .select('id')
+        .limit(1)
+        .single();
+      sellerId = sellerData?.id;
+    }
+    
+    if (!sellerId) {
+      // Dernier recours: utiliser l'admin id
+      const { data: adminData } = await supabase
+        .from('admins')
+        .select('id')
+        .limit(1)
+        .single();
+      sellerId = adminData?.id;
+    }
+    
+    if (!sellerId) {
+      return NextResponse.json({
+        success: false,
+        error: {
+          code: 'SELLER_NOT_FOUND',
+          message: 'Aucun vendeur trouvé. Veuillez créer un vendeur dans Supabase d\'abord.'
+        }
+      }, { status: 400 });
+    }
 
     // Create product directly in Supabase
     const priceValue = parseFloat(price);
