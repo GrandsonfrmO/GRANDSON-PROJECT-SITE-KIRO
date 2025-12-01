@@ -175,6 +175,8 @@ export async function POST(request: NextRequest) {
     const stockValue = parseInt(stock);
     
     const productData = {
+      name: name.trim(),
+      description: description || '',
       base_price: priceValue,
       price: priceValue,
       images: Array.isArray(images) ? images : (images ? [images] : []),
@@ -185,7 +187,7 @@ export async function POST(request: NextRequest) {
       colors: colors && colors.length > 0 ? (Array.isArray(colors) ? colors : [colors]) : null,
       stock: stockValue,
       is_active: is_active !== undefined ? is_active : true,
-      seller_id: null // Nullable dans ta table
+      seller_id: null
     };
     
     console.log('📦 Données à insérer:', JSON.stringify(productData, null, 2));
