@@ -169,6 +169,15 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabaseAdmin();
 
+    // Récupérer le premier admin comme seller_id par défaut
+    const { data: adminData } = await supabase
+      .from('admins')
+      .select('id')
+      .limit(1)
+      .single();
+    
+    const sellerId = adminData?.id || '00000000-0000-0000-0000-000000000001';
+
     // Create product directly in Supabase
     const priceValue = parseFloat(price);
     const { data: product, error } = await supabase
@@ -178,6 +187,7 @@ export async function POST(request: NextRequest) {
         description: description || '',
         price: priceValue,
         base_price: priceValue, // Colonne requise dans Supabase
+        seller_id: sellerId,    // Colonne requise dans Supabase
         category,
         sizes: sizes && sizes.length > 0 ? (Array.isArray(sizes) ? sizes : [sizes]) : ['Unique'],
         images: Array.isArray(images) ? images : (images ? [images] : []),
