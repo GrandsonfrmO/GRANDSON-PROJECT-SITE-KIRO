@@ -1,64 +1,67 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
-// Données de démonstration
-const demoProducts = [
-  {
-    id: '1',
-    name: 'T-Shirt Grandson Classic',
-    description: 'T-shirt premium en coton bio avec logo Grandson Project',
-    price: 45000,
-    category: 'T-Shirts',
-    sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
-    images: ['/placeholder-product.svg'],
-    colors: ['Noir', 'Blanc', 'Gris', 'Rouge', 'Bleu'],
-    stock: 15,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: '2',
-    name: 'Casquette Streetwear',
-    description: 'Casquette ajustable avec broderie exclusive',
-    price: 25000,
-    category: 'Accessoires',
-    sizes: ['Unique'],
-    images: ['/placeholder-product.svg'],
-    colors: ['Noir', 'Rouge', 'Blanc', 'Bleu'],
-    stock: 8,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: '3',
-    name: 'Hoodie Urban Style',
-    description: 'Sweat à capuche confortable pour un style urbain',
-    price: 75000,
-    category: 'Sweats',
-    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-    images: ['/placeholder-product.svg'],
-    colors: ['Noir', 'Gris', 'Marine'],
-    stock: 12,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: '4',
-    name: 'Jean Slim Fit',
-    description: 'Jean moderne avec coupe ajustée',
-    price: 85000,
-    category: 'Pantalons',
-    sizes: ['28', '30', '32', '34', '36'],
-    images: ['/placeholder-product.svg'],
-    colors: ['Bleu', 'Noir'],
-    stock: 6,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+// Créer un client Supabase
+const getSupabaseClient = () => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  
+  return createClient(supabaseUrl, supabaseKey);
+};
+
+// Transform product data from snake_case to camelCase
+const transformProduct = (product: any) => {
+  if (!product) return null;
+  
+  // Parse images if it's a string
+  let images = product.images;
+  if (typeof images === 'string') {
+    try {
+      images = JSON.parse(images);
+    } catch (e) {
+      images = [images];
+    }
   }
-];
+  if (!Array.isArray(images)) {
+    images = images ? [images] : [];
+  }
+  
+  // Parse sizes if it's a string
+  let sizes = product.sizes;
+  if (typeof sizes === 'string') {
+    try {
+      sizes = JSON.parse(sizes);
+    } catch (e) {
+      sizes = [sizes];
+    }
+  }
+  if (!Array.isArray(sizes)) {
+    sizes = sizes ? [sizes] : ['Unique'];
+  }
+  
+  // Parse colors if it's a string
+  let colors = product.colors;
+  if (typeof colors === 'string') {
+    try {
+      colors = JSON.parse(colors);
+    } catch (e) {
+      colors = [colors];
+    }
+  }
+  if (colors && !Array.isArray(colors)) {
+    colors = [colors];
+  }
+  
+  return {
+    ...product,
+    images,
+    sizes,
+    colors,
+    isActive: product.is_active,
+    createdAt: product.created_at,
+    updatedAt: product.updated_at
+  };
+};
 
 // GET /api/products/[id] - Get product by ID
 export async function GET(
@@ -68,30 +71,16 @@ export async function GET(
   try {
     const { id } = await params;
 
-    // Essayer de se connecter au backend d'abord
-    try {
-      const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
-      const response = await fetch(`${backendUrl}/api/products/${id}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        // Timeout rapide pour éviter d'attendre trop longtemps
-        signal: AbortSignal.timeout(2000)
-      });
+    const supabase = getSupabaseClient();
 
-      if (response.ok) {
-        const data = await response.json();
-        return NextResponse.json(data);
-      }
-    } catch (backendError) {
-      console.log('Backend not available, using demo data');
-    }
+    const { data: product, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    // Utiliser les données de démonstration si le backend n'est pas disponible
-    const product = demoProducts.find(p => p.id === id);
-    
-    if (!product) {
+    if (error || !product) {
+      console.error('❌ Supabase error:', error);
       return NextResponse.json(
         {
           success: false,
@@ -107,7 +96,7 @@ export async function GET(
     return NextResponse.json({
       success: true,
       data: {
-        product: product
+        product: transformProduct(product)
       }
     });
   } catch (error) {

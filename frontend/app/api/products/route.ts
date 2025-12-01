@@ -1,64 +1,67 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
-// Données de démonstration
-const demoProducts = [
-  {
-    id: '1',
-    name: 'T-Shirt Grandson Classic',
-    description: 'T-shirt premium en coton bio avec logo Grandson Project',
-    price: 45000,
-    category: 'T-Shirts',
-    sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
-    images: ['/placeholder-product.svg'],
-    colors: ['Noir', 'Blanc', 'Gris', 'Rouge', 'Bleu'],
-    stock: 15,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: '2',
-    name: 'Casquette Streetwear',
-    description: 'Casquette ajustable avec broderie exclusive',
-    price: 25000,
-    category: 'Accessoires',
-    sizes: ['Unique'],
-    images: ['/placeholder-product.svg'],
-    colors: ['Noir', 'Rouge', 'Blanc', 'Bleu'],
-    stock: 8,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: '3',
-    name: 'Hoodie Urban Style',
-    description: 'Sweat à capuche confortable pour un style urbain',
-    price: 75000,
-    category: 'Sweats',
-    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-    images: ['/placeholder-product.svg'],
-    colors: ['Noir', 'Gris', 'Marine'],
-    stock: 12,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: '4',
-    name: 'Jean Slim Fit',
-    description: 'Jean moderne avec coupe ajustée',
-    price: 85000,
-    category: 'Pantalons',
-    sizes: ['28', '30', '32', '34', '36'],
-    images: ['/placeholder-product.svg'],
-    colors: ['Bleu', 'Noir'],
-    stock: 6,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+// Créer un client Supabase
+const getSupabaseClient = () => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  
+  return createClient(supabaseUrl, supabaseKey);
+};
+
+// Transform product data from snake_case to camelCase
+const transformProduct = (product: any) => {
+  if (!product) return null;
+  
+  // Parse images if it's a string
+  let images = product.images;
+  if (typeof images === 'string') {
+    try {
+      images = JSON.parse(images);
+    } catch (e) {
+      images = [images];
+    }
   }
-];
+  if (!Array.isArray(images)) {
+    images = images ? [images] : [];
+  }
+  
+  // Parse sizes if it's a string
+  let sizes = product.sizes;
+  if (typeof sizes === 'string') {
+    try {
+      sizes = JSON.parse(sizes);
+    } catch (e) {
+      sizes = [sizes];
+    }
+  }
+  if (!Array.isArray(sizes)) {
+    sizes = sizes ? [sizes] : ['Unique'];
+  }
+  
+  // Parse colors if it's a string
+  let colors = product.colors;
+  if (typeof colors === 'string') {
+    try {
+      colors = JSON.parse(colors);
+    } catch (e) {
+      colors = [colors];
+    }
+  }
+  if (colors && !Array.isArray(colors)) {
+    colors = [colors];
+  }
+  
+  return {
+    ...product,
+    images,
+    sizes,
+    colors,
+    isActive: product.is_active,
+    createdAt: product.created_at,
+    updatedAt: product.updated_at
+  };
+};
 
 // GET /api/products - Public endpoint for product listing
 export async function GET(request: NextRequest) {
@@ -68,61 +71,36 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
 
-    // Essayer de se connecter au backend d'abord
-    try {
-      const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
-      const queryString = new URLSearchParams({
-        ...(category && { category }),
-        page: page.toString(),
-        limit: limit.toString()
-      }).toString();
+    const supabase = getSupabaseClient();
 
-      const response = await fetch(`${backendUrl}/api/products?${queryString}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        // Timeout rapide pour éviter d'attendre trop longtemps
-        signal: AbortSignal.timeout(2000)
-      });
+    let query = supabase
+      .from('products')
+      .select('*')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
 
-      if (response.ok) {
-        const data = await response.json();
-        // Transform backend response to match expected frontend format
-        if (data.success && data.data && data.data.products) {
-          return NextResponse.json({
-            success: true,
-            products: data.data.products,
-            pagination: data.data.pagination
-          });
-        }
-        return NextResponse.json(data);
-      }
-    } catch (backendError: any) {
-      console.error('Backend error:', backendError.message || backendError);
-      // Retourner l'erreur au lieu des données de démonstration
+    if (category) {
+      query = query.eq('category', category);
+    }
+
+    const { data: products, error } = await query;
+
+    if (error) {
+      console.error('❌ Supabase error:', error);
       return NextResponse.json({
         success: false,
         error: {
-          code: 'BACKEND_ERROR',
-          message: 'Impossible de se connecter à la base de données. Vérifiez les permissions RLS dans Supabase.'
+          code: 'DATABASE_ERROR',
+          message: error.message
         },
         products: []
-      });
+      }, { status: 500 });
     }
 
-    // Fallback - ne devrait pas arriver si le backend répond
-    let filteredProducts = demoProducts;
-
-    // Filtrer par catégorie si spécifiée
-    if (category) {
-      filteredProducts = demoProducts.filter(p => p.category === category);
-    }
-
-    // Pagination simple
+    // Pagination
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
-    const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+    const paginatedProducts = (products || []).slice(startIndex, endIndex).map(transformProduct);
 
     return NextResponse.json({
       success: true,
@@ -130,8 +108,8 @@ export async function GET(request: NextRequest) {
       pagination: {
         page,
         limit,
-        total: filteredProducts.length,
-        totalPages: Math.ceil(filteredProducts.length / limit)
+        total: products?.length || 0,
+        totalPages: Math.ceil((products?.length || 0) / limit)
       }
     });
   } catch (error) {
