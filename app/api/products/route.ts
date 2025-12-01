@@ -169,32 +169,30 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabaseAdmin();
 
-    // Récupérer le premier admin comme seller_id par défaut
-    const { data: adminData } = await supabase
-      .from('admins')
-      .select('id')
-      .limit(1)
-      .single();
-    
-    const sellerId = adminData?.id || '00000000-0000-0000-0000-000000000001';
-
     // Create product directly in Supabase
+    // Structure basée sur la table Supabase réelle
     const priceValue = parseFloat(price);
+    const stockValue = parseInt(stock);
+    
+    const productData = {
+      base_price: priceValue,
+      price: priceValue,
+      images: Array.isArray(images) ? images : (images ? [images] : []),
+      category: category,
+      attributes: JSON.stringify({ name: name.trim(), description: description || '' }),
+      total_stock: stockValue,
+      sizes: Array.isArray(sizes) ? sizes : (sizes ? [sizes] : ['Unique']),
+      colors: colors && colors.length > 0 ? (Array.isArray(colors) ? colors : [colors]) : null,
+      stock: stockValue,
+      is_active: is_active !== undefined ? is_active : true,
+      seller_id: null // Nullable dans ta table
+    };
+    
+    console.log('📦 Données à insérer:', JSON.stringify(productData, null, 2));
+
     const { data: product, error } = await supabase
       .from('products')
-      .insert([{
-        name: name.trim(),
-        description: description || '',
-        price: priceValue,
-        base_price: priceValue, // Colonne requise dans Supabase
-        seller_id: sellerId,    // Colonne requise dans Supabase
-        category,
-        sizes: sizes && sizes.length > 0 ? (Array.isArray(sizes) ? sizes : [sizes]) : ['Unique'],
-        images: Array.isArray(images) ? images : (images ? [images] : []),
-        colors: colors && colors.length > 0 ? (Array.isArray(colors) ? colors : [colors]) : null,
-        stock: parseInt(stock),
-        is_active: is_active !== undefined ? is_active : true
-      }])
+      .insert([productData])
       .select()
       .single();
 
