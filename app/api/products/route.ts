@@ -169,7 +169,7 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabaseAdmin();
 
-    // Récupérer ou créer un seller_id depuis la table users
+    // Récupérer un seller_id existant depuis la table users ou products
     let sellerId: string | null = null;
     
     // D'abord essayer de récupérer depuis un produit existant
@@ -192,42 +192,8 @@ export async function POST(request: NextRequest) {
       sellerId = userData?.id;
     }
     
-    // Si toujours pas de seller_id, créer un utilisateur par défaut
-    if (!sellerId) {
-      console.log('📝 Création d\'un utilisateur par défaut...');
-      const { data: newUser, error: userError } = await supabase
-        .from('users')
-        .insert([{
-          id: crypto.randomUUID(),
-          email: 'admin@grandsonproject.com',
-          name: 'Admin Grandson'
-        }])
-        .select()
-        .single();
-      
-      if (userError) {
-        console.error('❌ Erreur création utilisateur:', userError);
-        // Essayer avec moins de champs
-        const { data: simpleUser, error: simpleError } = await supabase
-          .from('users')
-          .insert([{ id: crypto.randomUUID() }])
-          .select()
-          .single();
-        
-        if (simpleError) {
-          return NextResponse.json({
-            success: false,
-            error: {
-              code: 'USER_CREATE_ERROR',
-              message: `Impossible de créer un utilisateur: ${simpleError.message}`
-            }
-          }, { status: 400 });
-        }
-        sellerId = simpleUser?.id;
-      } else {
-        sellerId = newUser?.id;
-      }
-    }
+    // Si toujours pas de seller_id, on laisse NULL (la table doit l'accepter)
+    console.log('📝 seller_id utilisé:', sellerId || 'NULL');
 
     // Create product directly in Supabase
     const priceValue = parseFloat(price);
