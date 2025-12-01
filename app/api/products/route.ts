@@ -169,8 +169,17 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabaseAdmin();
 
+    // Récupérer le premier admin comme seller_id
+    const { data: adminData } = await supabase
+      .from('admins')
+      .select('id')
+      .limit(1)
+      .single();
+    
+    // Utiliser l'ID admin ou un UUID par défaut
+    const sellerId = adminData?.id || 'admin-default';
+
     // Create product directly in Supabase
-    // Structure basée sur la table Supabase réelle
     const priceValue = parseFloat(price);
     const stockValue = parseInt(stock);
     
@@ -187,7 +196,7 @@ export async function POST(request: NextRequest) {
       colors: colors && colors.length > 0 ? (Array.isArray(colors) ? colors : [colors]) : null,
       stock: stockValue,
       is_active: is_active !== undefined ? is_active : true,
-      seller_id: null
+      seller_id: sellerId
     };
     
     console.log('📦 Données à insérer:', JSON.stringify(productData, null, 2));
