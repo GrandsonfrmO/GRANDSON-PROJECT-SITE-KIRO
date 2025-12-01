@@ -169,7 +169,7 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabaseAdmin();
 
-    // Récupérer un seller_id depuis la table users (foreign key vers public.users.id)
+    // Récupérer ou créer un seller_id depuis la table users
     let sellerId: string | null = null;
     
     // D'abord essayer de récupérer depuis un produit existant
@@ -192,14 +192,41 @@ export async function POST(request: NextRequest) {
       sellerId = userData?.id;
     }
     
+    // Si toujours pas de seller_id, créer un utilisateur par défaut
     if (!sellerId) {
-      return NextResponse.json({
-        success: false,
-        error: {
-          code: 'USER_NOT_FOUND',
-          message: 'Aucun utilisateur trouvé dans la table users. Créez un utilisateur dans Supabase d\'abord.'
+      console.log('📝 Création d\'un utilisateur par défaut...');
+      const { data: newUser, error: userError } = await supabase
+        .from('users')
+        .insert([{
+          id: crypto.randomUUID(),
+          email: 'admin@grandsonproject.com',
+          name: 'Admin Grandson'
+        }])
+        .select()
+        .single();
+      
+      if (userError) {
+        console.error('❌ Erreur création utilisateur:', userError);
+        // Essayer avec moins de champs
+        const { data: simpleUser, error: simpleError } = await supabase
+          .from('users')
+          .insert([{ id: crypto.randomUUID() }])
+          .select()
+          .single();
+        
+        if (simpleError) {
+          return NextResponse.json({
+            success: false,
+            error: {
+              code: 'USER_CREATE_ERROR',
+              message: `Impossible de créer un utilisateur: ${simpleError.message}`
+            }
+          }, { status: 400 });
         }
-      }, { status: 400 });
+        sellerId = simpleUser?.id;
+      } else {
+        sellerId = newUser?.id;
+      }
     }
 
     // Create product directly in Supabase
