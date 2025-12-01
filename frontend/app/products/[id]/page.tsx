@@ -74,12 +74,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       return;
     }
 
-    addToCart({
-      ...product,
-      selectedSize,
-      selectedColor,
-      quantity
-    });
+    addToCart(product, selectedSize, quantity, selectedColor);
 
     // Show success message
     alert(`✅ ${product.name} ajouté au panier !`);
