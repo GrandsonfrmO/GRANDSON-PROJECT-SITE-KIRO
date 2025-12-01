@@ -1,12 +1,6 @@
 'use client';
 
-import { useIsMobile } from '../hooks/useIsMobile';
-import { useInteractiveButton } from '../hooks/useHapticFeedback';
-
 export default function CustomizationBanner() {
-  const isMobile = useIsMobile();
-  const { handlePress } = useInteractiveButton();
-
   const whatsappLink = `https://wa.me/224662662958`;
 
   const prices = [
@@ -49,7 +43,6 @@ export default function CustomizationBanner() {
               href={whatsappLink}
               target="_blank"
               rel="noopener noreferrer"
-              {...(isMobile ? handlePress(() => {}, 'medium') : {})}
               className="inline-flex items-center gap-1 bg-green-600 text-white rounded px-2 py-1 text-[10px] font-bold hover:bg-green-500 active:scale-95 transition-all"
             >
               <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
