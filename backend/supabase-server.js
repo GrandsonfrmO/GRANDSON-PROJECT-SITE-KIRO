@@ -557,16 +557,31 @@ app.post('/api/admin/products', authenticateToken, async (req, res) => {
     
     // Préparer les données pour Supabase
     const priceValue = parseFloat(req.body.price);
+    const stockValue = parseInt(req.body.stock) || 0;
+    
+    // Les colonnes sont de type text, pas jsonb - convertir en JSON string
+    const sizesValue = req.body.sizes && req.body.sizes.length > 0 
+      ? JSON.stringify(req.body.sizes) 
+      : '["Unique"]';
+    const colorsValue = req.body.colors && req.body.colors.length > 0 
+      ? JSON.stringify(req.body.colors) 
+      : null;
+    const imagesValue = req.body.images && req.body.images.length > 0 
+      ? JSON.stringify(req.body.images) 
+      : '[]';
+    
     const productData = {
       name: req.body.name.trim(),
       description: req.body.description || 'Aucune description',
       price: priceValue,
-      base_price: priceValue, // Ajout de base_price (même valeur que price)
+      base_price: priceValue,
       category: req.body.category,
-      stock: parseInt(req.body.stock) || 0,
-      sizes: req.body.sizes || ['Unique'],
-      colors: req.body.colors || [],
-      images: req.body.images || [],
+      stock: stockValue,
+      total_stock: stockValue,
+      sizes: sizesValue,
+      colors: colorsValue,
+      images: imagesValue,
+      seller_id: 'admin', // Valeur par défaut pour seller_id (NOT NULL)
       is_active: req.body.is_active !== false
     };
     

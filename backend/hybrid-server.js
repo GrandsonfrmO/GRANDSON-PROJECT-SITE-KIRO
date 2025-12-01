@@ -498,18 +498,37 @@ app.post('/api/admin/products', authenticateAdmin, async (req, res) => {
 
     // Create product
     const priceValue = parseFloat(price);
+    const stockValue = parseInt(stock);
+    
+    // Préparer les images comme texte JSON (la colonne est de type text, pas jsonb)
+    const imagesValue = Array.isArray(images) && images.length > 0 
+      ? JSON.stringify(images) 
+      : '[]';
+    
+    // Préparer les sizes comme texte JSON
+    const sizesValue = sizes && sizes.length > 0 
+      ? JSON.stringify(Array.isArray(sizes) ? sizes : [sizes])
+      : '["Unique"]';
+    
+    // Préparer les colors comme texte JSON
+    const colorsValue = colors && colors.length > 0 
+      ? JSON.stringify(Array.isArray(colors) ? colors : [colors])
+      : null;
+
     const { data: product, error } = await supabase
       .from('products')
       .insert([{
         name,
-        description: description || '',
+        description: description || 'Aucune description',
         price: priceValue,
-        base_price: priceValue, // Ajout de base_price (même valeur que price)
+        base_price: priceValue,
         category,
-        sizes: sizes && sizes.length > 0 ? (Array.isArray(sizes) ? sizes : [sizes]) : ['Unique'],
-        images: Array.isArray(images) ? images : (images ? [images] : []),
-        colors: colors && colors.length > 0 ? (Array.isArray(colors) ? colors : [colors]) : null,
-        stock: parseInt(stock),
+        sizes: sizesValue,
+        images: imagesValue,
+        colors: colorsValue,
+        stock: stockValue,
+        total_stock: stockValue,
+        seller_id: 'admin', // Valeur par défaut pour seller_id (NOT NULL)
         is_active: true
       }])
       .select()
