@@ -1,14 +1,4 @@
--- Script SQL pour corriger le type de colonne des produits
--- À exécuter dans l'éditeur SQL de Supabase
 
--- 1. Vérifier le type actuel des colonnes
-SELECT 
-  column_name, 
-  data_type, 
-  udt_name
-FROM information_schema.columns 
-WHERE table_name = 'products' 
-  AND column_name IN ('images', 'sizes', 'colors');
 
 -- 2. Convertir les colonnes TEXT en JSONB si nécessaire
 -- ATTENTION: Cela va convertir les chaînes JSON en objets JSON

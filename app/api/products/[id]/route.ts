@@ -1,64 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
-// Données de démonstration
-const demoProducts = [
-  {
-    id: '1',
-    name: 'T-Shirt Grandson Classic',
-    description: 'T-shirt premium en coton bio avec logo Grandson Project',
-    price: 45000,
-    category: 'T-Shirts',
-    sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
-    images: ['/placeholder-product.svg'],
-    colors: ['Noir', 'Blanc', 'Gris', 'Rouge', 'Bleu'],
-    stock: 15,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: '2',
-    name: 'Casquette Streetwear',
-    description: 'Casquette ajustable avec broderie exclusive',
-    price: 25000,
-    category: 'Accessoires',
-    sizes: ['Unique'],
-    images: ['/placeholder-product.svg'],
-    colors: ['Noir', 'Rouge', 'Blanc', 'Bleu'],
-    stock: 8,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: '3',
-    name: 'Hoodie Urban Style',
-    description: 'Sweat à capuche confortable pour un style urbain',
-    price: 75000,
-    category: 'Sweats',
-    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-    images: ['/placeholder-product.svg'],
-    colors: ['Noir', 'Gris', 'Marine'],
-    stock: 12,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: '4',
-    name: 'Jean Slim Fit',
-    description: 'Jean moderne avec coupe ajustée',
-    price: 85000,
-    category: 'Pantalons',
-    sizes: ['28', '30', '32', '34', '36'],
-    images: ['/placeholder-product.svg'],
-    colors: ['Bleu', 'Noir'],
-    stock: 6,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  }
-];
+// Créer un client Supabase
+const getSupabaseAdmin = () => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  
+  return createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
+};
+
+// Transform product data from snake_case to camelCase
+const transformProduct = (product: any) => {
+  if (!product) return null;
+  return {
+    ...product,
+    isActive: product.is_active,
+    createdAt: product.created_at,
+    updatedAt: product.updated_at
+  };
+};
 
 // GET /api/products/[id] - Get product by ID
 export async function GET(
@@ -68,29 +33,42 @@ export async function GET(
   try {
     const { id } = await params;
 
-    // Essayer de se connecter au backend d'abord
-    try {
-      const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
-      const response = await fetch(`${backendUrl}/api/products/${id}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        // Timeout rapide pour éviter d'attendre trop longtemps
-        signal: AbortSignal.timeout(2000)
-      });
+    const supabase = getSupabaseAdmin();
 
-      if (response.ok) {
-        const data = await response.json();
-        return NextResponse.json(data);
+    const { data: product, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      console.error('❌ Supabase error:', error);
+      
+      if (error.code === 'PGRST116') {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: 'NOT_FOUND',
+              message: 'Produit non trouvé'
+            }
+          },
+          { status: 404 }
+        );
       }
-    } catch (backendError) {
-      console.log('Backend not available, using demo data');
+      
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'DATABASE_ERROR',
+            message: error.message
+          }
+        },
+        { status: 500 }
+      );
     }
 
-    // Utiliser les données de démonstration si le backend n'est pas disponible
-    const product = demoProducts.find(p => p.id === id);
-    
     if (!product) {
       return NextResponse.json(
         {
@@ -107,7 +85,7 @@ export async function GET(
     return NextResponse.json({
       success: true,
       data: {
-        product: product
+        product: transformProduct(product)
       }
     });
   } catch (error) {
@@ -149,25 +127,54 @@ export async function PUT(
         { status: 401 }
       );
     }
-    
-    // Forward to backend
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
-    const response = await fetch(`${backendUrl}/api/admin/products/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(body),
-    });
 
-    const data = await response.json();
+    const supabase = getSupabaseAdmin();
 
-    if (!response.ok) {
-      return NextResponse.json(data, { status: response.status });
+    const { name, description, price, category, stock, sizes, images, colors, is_active } = body;
+
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (price !== undefined) {
+      updateData.price = parseFloat(price);
+      updateData.base_price = parseFloat(price);
+    }
+    if (category !== undefined) updateData.category = category;
+    if (stock !== undefined) {
+      updateData.stock = parseInt(stock);
+      updateData.total_stock = parseInt(stock);
+    }
+    if (sizes !== undefined) updateData.sizes = Array.isArray(sizes) ? sizes : [sizes];
+    if (images !== undefined) updateData.images = Array.isArray(images) ? images : [images];
+    if (colors !== undefined) updateData.colors = Array.isArray(colors) ? colors : (colors ? [colors] : null);
+    if (is_active !== undefined) updateData.is_active = is_active;
+    updateData.updated_at = new Date().toISOString();
+
+    const { data: product, error } = await supabase
+      .from('products')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Supabase update error:', error);
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'DATABASE_ERROR',
+            message: error.message
+          }
+        },
+        { status: 500 }
+      );
     }
 
-    return NextResponse.json(data);
+    return NextResponse.json({
+      success: true,
+      data: { product: transformProduct(product) }
+    });
   } catch (error) {
     console.error('Update product API error:', error);
     return NextResponse.json(
@@ -207,23 +214,31 @@ export async function DELETE(
       );
     }
 
-    // Forward to backend
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
-    const response = await fetch(`${backendUrl}/api/admin/products/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-    });
+    const supabase = getSupabaseAdmin();
 
-    const data = await response.json();
+    const { error } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', id);
 
-    if (!response.ok) {
-      return NextResponse.json(data, { status: response.status });
+    if (error) {
+      console.error('❌ Supabase delete error:', error);
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'DATABASE_ERROR',
+            message: error.message
+          }
+        },
+        { status: 500 }
+      );
     }
 
-    return NextResponse.json(data);
+    return NextResponse.json({
+      success: true,
+      message: 'Produit supprimé avec succès'
+    });
   } catch (error) {
     console.error('Delete product API error:', error);
     return NextResponse.json(

@@ -24,9 +24,30 @@ export default function ProductDetailPage() {
     const fetchProduct = async () => {
       try {
         setLoading(true);
+        setError(null);
+        
         const response = await fetch(`/api/products/${params.id}`);
         const data = await response.json();
+        
+        // Vérifier si la réponse est un succès
+        if (!response.ok || data.success === false) {
+          const errorMessage = data.error?.message || 'Produit non trouvé';
+          console.error('API Error:', errorMessage);
+          setError(errorMessage);
+          setProduct(null);
+          return;
+        }
+        
         const productData = data.data?.product || data.product || data;
+        
+        // Vérifier que le produit existe et a les propriétés requises
+        if (!productData || !productData.id || !productData.name) {
+          console.error('Invalid product data:', productData);
+          setError('Données du produit invalides');
+          setProduct(null);
+          return;
+        }
+        
         setProduct(productData);
         
         if (productData.sizes && productData.sizes.length > 0) {
@@ -37,8 +58,9 @@ export default function ProductDetailPage() {
           setSelectedColor(productData.colors[0]);
         }
       } catch (err) {
-        setError('Impossible de charger le produit');
-        console.error(err);
+        console.error('Fetch error:', err);
+        setError('Impossible de charger le produit. Veuillez réessayer.');
+        setProduct(null);
       } finally {
         setLoading(false);
       }
