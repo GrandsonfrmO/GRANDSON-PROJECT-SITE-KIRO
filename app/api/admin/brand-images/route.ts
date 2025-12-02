@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Lazy initialization to avoid build-time errors
+const getSupabase = () => {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!url || !key) {
+    throw new Error('Missing Supabase configuration');
+  }
+  
+  return createClient(url, key);
+};
 
 // Default brand images
 const defaultBrandImages = {
@@ -16,6 +23,8 @@ const defaultBrandImages = {
 // GET /api/admin/brand-images - Fetch brand images
 export async function GET(request: NextRequest) {
   try {
+    const supabase = getSupabase();
+    
     // Fetch brand images from site_settings table
     const { data, error } = await supabase
       .from('site_settings')
@@ -97,6 +106,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Perform upserts
+    const supabase = getSupabase();
     for (const update of updates) {
       const { error } = await supabase
         .from('site_settings')

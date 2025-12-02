@@ -36,10 +36,14 @@ export default function BrandImages({ className = '', images }: BrandImagesProps
     setImageErrors(prev => new Set(prev).add(imageId));
   };
 
-  // Check for reduced motion preference
-  const prefersReducedMotion = typeof window !== 'undefined' 
-    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches 
-    : false;
+  // Check for reduced motion preference - use state to avoid hydration mismatch
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setPrefersReducedMotion(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    }
+  }, []);
 
   const animationClass = prefersReducedMotion ? '' : 'animate-rotate-logo';
 

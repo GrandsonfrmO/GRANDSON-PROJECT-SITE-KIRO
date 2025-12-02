@@ -1,14 +1,28 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
-}
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 // Client pour le frontend avec clé publique
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Create a lazy-initialized client to avoid build-time errors
+let _supabase: SupabaseClient | null = null;
+
+export const getSupabase = (): SupabaseClient => {
+  if (!_supabase) {
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('Missing Supabase environment variables');
+      // Return a dummy client that will fail gracefully
+      throw new Error('Supabase not configured');
+    }
+    _supabase = createClient(supabaseUrl, supabaseAnonKey);
+  }
+  return _supabase;
+};
+
+// For backward compatibility - lazy initialization
+export const supabase = supabaseUrl && supabaseAnonKey 
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null as unknown as SupabaseClient;
 
 // Types pour TypeScript (réutilisés du backend)
 export interface Product {
