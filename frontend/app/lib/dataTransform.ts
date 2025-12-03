@@ -1,15 +1,31 @@
 // Utility functions to transform Supabase data to frontend format
 
+// Helper to parse JSON strings or return array as-is
+function parseJsonArray(value: any, defaultValue: any[] = []): any[] {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [parsed];
+    } catch {
+      return value ? [value] : defaultValue;
+    }
+  }
+  return defaultValue;
+}
+
 export function transformProduct(supabaseProduct: any) {
+  if (!supabaseProduct) return null;
+  
   return {
     ...supabaseProduct,
-    isActive: supabaseProduct.is_active !== undefined ? supabaseProduct.is_active : true,
+    isActive: supabaseProduct.is_active !== undefined ? supabaseProduct.is_active : (supabaseProduct.isActive !== undefined ? supabaseProduct.isActive : true),
     createdAt: supabaseProduct.created_at || supabaseProduct.createdAt,
     updatedAt: supabaseProduct.updated_at || supabaseProduct.updatedAt,
     stock: supabaseProduct.stock !== undefined ? supabaseProduct.stock : 0,
-    images: Array.isArray(supabaseProduct.images) ? supabaseProduct.images : [],
-    sizes: Array.isArray(supabaseProduct.sizes) ? supabaseProduct.sizes : [],
-    colors: Array.isArray(supabaseProduct.colors) ? supabaseProduct.colors : null,
+    images: parseJsonArray(supabaseProduct.images, []),
+    sizes: parseJsonArray(supabaseProduct.sizes, ['Unique']),
+    colors: supabaseProduct.colors ? parseJsonArray(supabaseProduct.colors) : null,
   };
 }
 

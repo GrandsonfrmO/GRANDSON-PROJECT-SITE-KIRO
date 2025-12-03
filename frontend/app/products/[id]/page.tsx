@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Product } from '@/app/types';
 import Layout from '@/app/components/Layout';
 import { useCart } from '@/app/context/CartContext';
+import { transformProduct } from '@/app/lib/dataTransform';
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const [product, setProduct] = useState<Product | null>(null);
@@ -32,7 +33,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         const data = await response.json();
 
         if (data.success && data.data?.product) {
-          const prod = data.data.product;
+          // Transformer le produit pour s'assurer que images/sizes sont des tableaux
+          const prod = transformProduct(data.data.product);
+          if (!prod) {
+            setError('Produit non trouvé');
+            return;
+          }
           setProduct(prod);
           
           // Set default selections

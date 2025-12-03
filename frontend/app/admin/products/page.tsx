@@ -10,6 +10,7 @@ import api from '../../lib/api';
 import { Product } from '../../types';
 import ProductForm from '../../components/admin/ProductForm';
 import { getImageUrl } from '../../lib/imageOptimization';
+import { transformProducts } from '../../lib/dataTransform';
 
 export default function ProductManagement() {
   const router = useRouter();
@@ -26,9 +27,17 @@ export default function ProductManagement() {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/api/admin/products', true);
-      const productsList = response.data?.products || response.products || [];
-      setProducts(productsList);
+      // Utiliser l'API Next.js directement au lieu du backend
+      const response = await fetch('/api/admin/products', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        }
+      });
+      const data = await response.json();
+      const productsList = data.products || data.data?.products || [];
+      // Transformer les produits pour s'assurer que images/sizes sont des tableaux
+      const transformedProducts = transformProducts(productsList);
+      setProducts(transformedProducts);
     } catch (error) {
       console.error('Error fetching products:', error);
       setProducts([]);
@@ -78,9 +87,19 @@ export default function ProductManagement() {
 
   const handleDelete = async (productId: string) => {
     try {
-      await api.delete(`/api/admin/products/${productId}`, true);
-      setProducts(products.filter((p) => p.id !== productId));
-      setDeleteConfirm(null);
+      const response = await fetch(`/api/admin/products/${productId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setProducts(products.filter((p) => p.id !== productId));
+        setDeleteConfirm(null);
+      } else {
+        throw new Error(data.error?.message || 'Erreur lors de la suppression');
+      }
     } catch (error) {
       console.error('Error deleting product:', error);
       alert('Erreur lors de la suppression du produit');
