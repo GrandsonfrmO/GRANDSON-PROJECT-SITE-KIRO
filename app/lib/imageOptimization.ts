@@ -101,6 +101,11 @@ function getApiUrl(): string {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     
+    // Production detection - use backend URL
+    if (hostname.includes('vercel.app') || hostname.includes('grandsonproject')) {
+      return 'https://grandson-backend.onrender.com';
+    }
+    
     // If accessing via network IP, use the same IP for API
     if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
       return `http://${hostname}:3001`;
@@ -122,20 +127,23 @@ export function getImageUrl(imagePath: string, size: ImageSize = 'card'): string
     return imagePath;
   }
 
-  // If it's a full URL (Cloudinary)
+  // If it's already a full URL (Cloudinary, Supabase storage, or any https URL)
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-    return optimizeCloudinaryUrl(imagePath, size);
+    // Optimize Cloudinary URLs
+    if (imagePath.includes('cloudinary.com')) {
+      return optimizeCloudinaryUrl(imagePath, size);
+    }
+    // Return other URLs as-is (Supabase storage, etc.)
+    return imagePath;
   }
 
   // If it's a local path starting with /uploads/products/, serve directly from frontend
   if (imagePath.startsWith('/uploads/products/')) {
-    console.log('Serving product image directly from frontend:', imagePath);
     return imagePath;
   }
 
   // If it starts with uploads/products/ (missing slash), add the slash
   if (imagePath.startsWith('uploads/products/')) {
-    console.log('Serving product image directly from frontend (added slash):', `/${imagePath}`);
     return `/${imagePath}`;
   }
 
@@ -143,24 +151,17 @@ export function getImageUrl(imagePath: string, size: ImageSize = 'card'): string
   if (imagePath.startsWith('/uploads/') || imagePath.startsWith('uploads/')) {
     const apiUrl = getApiUrl();
     const cleanPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
-    const fullImageUrl = `${apiUrl}${cleanPath}`;
-    console.log('Serving image via backend API:', { imagePath, fullImageUrl });
-    return fullImageUrl;
+    return `${apiUrl}${cleanPath}`;
   }
 
   // For other paths, use the backend API
   const apiUrl = getApiUrl();
-  let fullImageUrl: string;
 
   if (imagePath.startsWith('/')) {
     // Other absolute path
-    fullImageUrl = `${apiUrl}${imagePath}`;
+    return `${apiUrl}${imagePath}`;
   } else {
     // Assume it's a filename in uploads directory
-    fullImageUrl = `${apiUrl}/uploads/${imagePath}`;
+    return `${apiUrl}/uploads/${imagePath}`;
   }
-
-  console.log('Image URL generated via backend (fallback):', { imagePath, fullImageUrl });
-
-  return fullImageUrl;
 }
