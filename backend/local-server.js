@@ -256,11 +256,12 @@ app.get('/api/delivery-zones', (req, res) => {
   res.json({
     success: true,
     data: [
-      { id: 1, name: 'Conakry Centre', fee: 5000 },
-      { id: 2, name: 'Ratoma', fee: 7000 },
-      { id: 3, name: 'Matoto', fee: 8000 },
-      { id: 4, name: 'Dixinn', fee: 6000 },
-      { id: 5, name: 'Kaloum', fee: 5000 }
+      { id: 1, name: 'Camayenne', fee: 30000 },
+      { id: 2, name: 'Dixinn', fee: 25000 },
+      { id: 3, name: 'Kaloum', fee: 35000 },
+      { id: 4, name: 'Matam', fee: 25000 },
+      { id: 5, name: 'Matoto', fee: 25000 },
+      { id: 6, name: 'Ratoma', fee: 20000 }
     ]
   });
 });

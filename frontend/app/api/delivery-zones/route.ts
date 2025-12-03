@@ -7,27 +7,69 @@ const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3001';
 // Fichier pour stocker les zones en mode démo
 const ZONES_FILE = path.join(process.cwd(), 'delivery-zones.json');
 
-// Données de démonstration initiales
+// Zones de livraison Conakry
 const defaultZones = [
   {
     id: '1',
-    name: 'Conakry Centre',
-    price: 5000,
+    name: 'Camayenne',
+    price: 30000,
     estimatedDays: '1-2 jours',
     isActive: true
   },
   {
     id: '2', 
-    name: 'Conakry Banlieue',
-    price: 8000,
-    estimatedDays: '2-3 jours',
+    name: 'Dixinn',
+    price: 25000,
+    estimatedDays: '1-2 jours',
     isActive: true
   },
   {
     id: '3',
-    name: 'Intérieur du pays',
-    price: 15000,
-    estimatedDays: '3-5 jours',
+    name: 'Kaloum',
+    price: 35000,
+    estimatedDays: '1-2 jours',
+    isActive: true
+  },
+  {
+    id: '4',
+    name: 'Matam',
+    price: 25000,
+    estimatedDays: '1-2 jours',
+    isActive: true
+  },
+  {
+    id: '5',
+    name: 'Matoto',
+    price: 25000,
+    estimatedDays: '1-2 jours',
+    isActive: true
+  },
+  {
+    id: '6',
+    name: 'Ratoma',
+    price: 20000,
+    estimatedDays: '1-2 jours',
+    isActive: true
+  },
+  {
+    id: '7',
+    name: 'SONFONIA',
+    price: 0,
+    estimatedDays: '1-2 jours',
+    isActive: true
+  },
+  {
+    id: '8',
+    name: 'VENIR CHERCHER',
+    price: 25000,
+    estimatedDays: 'Immédiat',
+    isActive: true
+  },
+  {
+    id: '9',
+    name: 'YATAYA-KOBAYA',
+    price: 30000,
+    estimatedDays: '1-2 jours',
     isActive: true
   }
 ];

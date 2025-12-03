@@ -41,9 +41,12 @@ export default function CheckoutPage() {
       } catch (error) {
         console.error('Error fetching delivery zones:', error);
         setDeliveryZones([
-          { id: '1', name: 'Conakry Centre', price: 5000 },
-          { id: '2', name: 'Conakry Banlieue', price: 8000 },
-          { id: '3', name: 'Intérieur du pays', price: 15000 }
+          { id: '1', name: 'Camayenne', price: 30000 },
+          { id: '2', name: 'Dixinn', price: 25000 },
+          { id: '3', name: 'Kaloum', price: 35000 },
+          { id: '4', name: 'Matam', price: 25000 },
+          { id: '5', name: 'Matoto', price: 25000 },
+          { id: '6', name: 'Ratoma', price: 20000 }
         ]);
       } finally {
         setLoadingZones(false);

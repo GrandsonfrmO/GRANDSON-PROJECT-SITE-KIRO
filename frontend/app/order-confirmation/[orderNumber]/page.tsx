@@ -13,23 +13,41 @@ interface OrderItem {
   size: string;
   quantity: number;
   price: number;
-  product: {
+  // Support both nested product and flat structure
+  product?: {
     id: string;
     name: string;
-    images: string[];
+    images?: string[];
   };
+  // Flat structure from some API responses
+  name?: string;
+  color?: string;
+  images?: string[];
 }
 
 interface Order {
   id: string;
   orderNumber: string;
-  customerName: string;
-  customerPhone: string;
+  // Support both flat and nested customer info
+  customerName?: string;
+  customerPhone?: string;
   customerEmail?: string;
-  deliveryAddress: string;
-  deliveryZone: string;
-  deliveryFee: number;
-  totalAmount: number;
+  customerInfo?: {
+    name: string;
+    email?: string;
+    phone: string;
+  };
+  // Support both flat and nested delivery info
+  deliveryAddress?: string;
+  deliveryZone?: string;
+  deliveryFee?: number;
+  deliveryInfo?: {
+    address: string;
+    zone: string;
+    fee: number;
+  };
+  totalAmount?: number;
+  total?: number;
   status: string;
   createdAt: string;
   items: OrderItem[];
@@ -190,38 +208,50 @@ export default function OrderConfirmationPage() {
               </div>
 
               {/* Customer Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                <div>
-                  <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                    Informations Client
-                  </h3>
-                  <div className="space-y-2 text-neutral-600 dark:text-neutral-300">
-                    <p><strong>Nom:</strong> {order.customerName}</p>
-                    <p><strong>Téléphone:</strong> {order.customerPhone}</p>
-                    {order.customerEmail && (
-                      <p><strong>Email:</strong> {order.customerEmail}</p>
-                    )}
-                  </div>
-                </div>
+              {(() => {
+                // Support both flat and nested structures
+                const customerName = order.customerName || order.customerInfo?.name || 'Client';
+                const customerPhone = order.customerPhone || order.customerInfo?.phone || '';
+                const customerEmail = order.customerEmail || order.customerInfo?.email;
+                const deliveryZone = order.deliveryZone || order.deliveryInfo?.zone || '';
+                const deliveryAddress = order.deliveryAddress || order.deliveryInfo?.address || '';
+                const deliveryFee = order.deliveryFee ?? order.deliveryInfo?.fee ?? 0;
+                
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                    <div>
+                      <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        Informations Client
+                      </h3>
+                      <div className="space-y-2 text-neutral-600 dark:text-neutral-300">
+                        <p><strong>Nom:</strong> {customerName}</p>
+                        <p><strong>Téléphone:</strong> {customerPhone}</p>
+                        {customerEmail && (
+                          <p><strong>Email:</strong> {customerEmail}</p>
+                        )}
+                      </div>
+                    </div>
 
-                <div>
-                  <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    Livraison
-                  </h3>
-                  <div className="space-y-2 text-neutral-600 dark:text-neutral-300">
-                    <p><strong>Zone:</strong> {order.deliveryZone}</p>
-                    <p><strong>Adresse:</strong> {order.deliveryAddress}</p>
-                    <p><strong>Frais:</strong> {formatPrice(order.deliveryFee)}</p>
+                    <div>
+                      <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        Livraison
+                      </h3>
+                      <div className="space-y-2 text-neutral-600 dark:text-neutral-300">
+                        <p><strong>Zone:</strong> {deliveryZone}</p>
+                        <p><strong>Adresse:</strong> {deliveryAddress}</p>
+                        <p><strong>Frais:</strong> {formatPrice(deliveryFee)}</p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                );
+              })()}
 
               {/* Order Items */}
               <div className="mb-8">
@@ -232,88 +262,111 @@ export default function OrderConfirmationPage() {
                   Articles Commandés
                 </h3>
                 <div className="space-y-4">
-                  {order.items.map((item) => (
-                    <div key={item.id} className="flex gap-4 p-4 bg-neutral-50 dark:bg-neutral-700 rounded-2xl">
-                      <div className="relative w-20 h-20 shrink-0 rounded-xl overflow-hidden bg-neutral-200">
-                        {item.product.images && item.product.images.length > 0 ? (
-                          <Image
-                            src={getImageUrl(item.product.images[0], 'cart')}
-                            alt={item.product.name}
-                            fill
-                            className="object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-neutral-300 flex items-center justify-center">
-                            <svg className="w-8 h-8 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                          </div>
-                        )}
+                  {order.items.map((item) => {
+                    // Support both nested product and flat structure
+                    const itemName = item.product?.name || item.name || 'Produit';
+                    const itemImages = item.product?.images || item.images || [];
+                    const hasImage = itemImages.length > 0;
+                    
+                    return (
+                      <div key={item.id} className="flex gap-4 p-4 bg-neutral-50 dark:bg-neutral-700 rounded-2xl">
+                        <div className="relative w-20 h-20 shrink-0 rounded-xl overflow-hidden bg-neutral-200">
+                          {hasImage ? (
+                            <Image
+                              src={getImageUrl(itemImages[0], 'cart')}
+                              alt={itemName}
+                              fill
+                              className="object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-neutral-300 flex items-center justify-center">
+                              <svg className="w-8 h-8 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-bold text-neutral-900 dark:text-white text-sm line-clamp-2 mb-1">
+                            {itemName}
+                          </h4>
+                          <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-2">
+                            Taille: <span className="font-bold">{item.size}</span> • Quantité: <span className="font-bold">{item.quantity}</span>
+                            {item.color && <> • Couleur: <span className="font-bold">{item.color}</span></>}
+                          </p>
+                          <p className="text-accent font-black">
+                            {formatPrice(item.price * item.quantity)}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-neutral-900 dark:text-white text-sm line-clamp-2 mb-1">
-                          {item.product.name}
-                        </h4>
-                        <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-2">
-                          Taille: <span className="font-bold">{item.size}</span> • Quantité: <span className="font-bold">{item.quantity}</span>
-                        </p>
-                        <p className="text-accent font-black">
-                          {formatPrice(item.price * item.quantity)}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
               {/* Order Total */}
-              <div className="border-t-2 border-neutral-200 dark:border-neutral-700 pt-6">
-                <div className="space-y-3">
-                  <div className="flex justify-between text-neutral-700 dark:text-neutral-300">
-                    <span className="font-semibold">Sous-total</span>
-                    <span className="font-bold">{formatPrice(order.totalAmount - order.deliveryFee)}</span>
+              {(() => {
+                const totalAmount = order.totalAmount ?? order.total ?? 0;
+                const deliveryFee = order.deliveryFee ?? order.deliveryInfo?.fee ?? 0;
+                const subtotal = totalAmount - deliveryFee;
+                
+                return (
+                  <div className="border-t-2 border-neutral-200 dark:border-neutral-700 pt-6">
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-neutral-700 dark:text-neutral-300">
+                        <span className="font-semibold">Sous-total</span>
+                        <span className="font-bold">{formatPrice(subtotal)}</span>
+                      </div>
+                      <div className="flex justify-between text-neutral-700 dark:text-neutral-300">
+                        <span className="font-semibold">Frais de livraison</span>
+                        <span className="font-bold">{formatPrice(deliveryFee)}</span>
+                      </div>
+                      <div className="flex justify-between text-3xl font-black text-neutral-900 dark:text-white pt-3 border-t-2 border-neutral-200 dark:border-neutral-700">
+                        <span>Total</span>
+                        <span className="text-accent">{formatPrice(totalAmount)}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex justify-between text-neutral-700 dark:text-neutral-300">
-                    <span className="font-semibold">Frais de livraison</span>
-                    <span className="font-bold">{formatPrice(order.deliveryFee)}</span>
-                  </div>
-                  <div className="flex justify-between text-3xl font-black text-neutral-900 dark:text-white pt-3 border-t-2 border-neutral-200 dark:border-neutral-700">
-                    <span>Total</span>
-                    <span className="text-accent">{formatPrice(order.totalAmount)}</span>
-                  </div>
-                </div>
-              </div>
+                );
+              })()}
             </div>
 
             {/* Next Steps */}
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-3xl p-8 mb-8 border-2 border-green-200 dark:border-green-700">
-              <h3 className="text-2xl font-black text-green-900 dark:text-green-100 mb-6 flex items-center gap-3">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Prochaines Étapes
-              </h3>
-              <div className="space-y-4 text-green-800 dark:text-green-200">
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">1</div>
-                  <p>Notre équipe va examiner votre commande et vérifier la disponibilité des articles.</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">2</div>
-                  <p>Nous vous contacterons au <strong>{order.customerPhone}</strong> pour confirmer les détails et organiser la livraison.</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">3</div>
-                  <p>Vous recevrez une notification dès que votre commande sera validée et expédiée.</p>
-                </div>
-                {order.customerEmail && (
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">📧</div>
-                    <p>Un email de confirmation a été envoyé à <strong>{order.customerEmail}</strong>.</p>
+            {(() => {
+              const customerPhone = order.customerPhone || order.customerInfo?.phone || '';
+              const customerEmail = order.customerEmail || order.customerInfo?.email;
+              
+              return (
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-3xl p-8 mb-8 border-2 border-green-200 dark:border-green-700">
+                  <h3 className="text-2xl font-black text-green-900 dark:text-green-100 mb-6 flex items-center gap-3">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Prochaines Étapes
+                  </h3>
+                  <div className="space-y-4 text-green-800 dark:text-green-200">
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">1</div>
+                      <p>Notre équipe va examiner votre commande et vérifier la disponibilité des articles.</p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">2</div>
+                      <p>Nous vous contacterons au <strong>{customerPhone}</strong> pour confirmer les détails et organiser la livraison.</p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">3</div>
+                      <p>Vous recevrez une notification dès que votre commande sera validée et expédiée.</p>
+                    </div>
+                    {customerEmail && (
+                      <div className="flex items-start gap-3">
+                        <div className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">📧</div>
+                        <p>Un email de confirmation a été envoyé à <strong>{customerEmail}</strong>.</p>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            </div>
+                </div>
+              );
+            })()}
 
             {/* Actions */}
             <div className="flex flex-col sm:flex-row gap-4">

@@ -1,0 +1,56 @@
+[
+  {
+    "id": "1",
+    "name": "VENIR CHERCHER",
+    "price": 0,
+    "isActive": true
+  },
+  {
+    "id": "2",
+    "name": "Camayenne",
+    "price": 30000,
+    "isActive": true
+  },
+  {
+    "id": "3",
+    "name": "Dixinn",
+    "price": 25000,
+    "isActive": true
+  },
+  {
+    "id": "4",
+    "name": "Kaloum",
+    "price": 35000,
+    "isActive": true
+  },
+  {
+    "id": "5",
+    "name": "Matam",
+    "price": 25000,
+    "isActive": true
+  },
+  {
+    "id": "6",
+    "name": "Matoto",
+    "price": 25000,
+    "isActive": true
+  },
+  {
+    "id": "7",
+    "name": "Ratoma",
+    "price": 20000,
+    "isActive": true
+  },
+  {
+    "id": "8",
+    "name": "SONFONIA",
+    "price": 30000,
+    "isActive": true
+  },
+  {
+    "id": "9",
+    "name": "YATAYA-KOBAYA",
+    "price": 25000,
+    "isActive": true
+  }
+]

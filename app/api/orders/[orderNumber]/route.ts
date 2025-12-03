@@ -24,8 +24,8 @@ const demoOrder = {
   ],
   deliveryInfo: {
     address: 'Conakry, Guinée',
-    zone: 'Conakry Centre',
-    fee: 5000
+    zone: 'Ratoma',
+    fee: 20000
   },
   total: 95000,
   createdAt: new Date().toISOString()

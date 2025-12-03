@@ -114,11 +114,12 @@ INSERT INTO admins (username, password) VALUES
 
 -- Insert default delivery zones
 INSERT INTO delivery_zones (name, price) VALUES 
-('Conakry Centre', 5000),
-('Ratoma', 7000),
-('Matoto', 8000),
-('Matam', 6000),
-('Dixinn', 6000);
+('Camayenne', 30000),
+('Dixinn', 25000),
+('Kaloum', 35000),
+('Matam', 25000),
+('Matoto', 25000),
+('Ratoma', 20000);
 
 -- Insert default site settings
 INSERT INTO site_settings (key, value) VALUES 

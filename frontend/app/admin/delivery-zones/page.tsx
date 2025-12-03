@@ -81,8 +81,9 @@ export default function DeliveryZonesPage() {
       return;
     }
 
-    if (!formData.price || parseFloat(formData.price) < 0) {
-      setFormError('Le prix doit être un nombre positif');
+    const priceValue = parseFloat(formData.price);
+    if (formData.price === '' || isNaN(priceValue) || priceValue < 0) {
+      setFormError('Le prix doit être un nombre positif ou zéro');
       return;
     }
 
