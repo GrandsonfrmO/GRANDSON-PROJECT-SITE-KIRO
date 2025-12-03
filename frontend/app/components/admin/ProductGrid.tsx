@@ -168,7 +168,7 @@ export default function ProductGrid({
                           <td className="py-4 px-6">
                             <div className="flex items-center gap-4">
                               <div className="w-12 h-12 bg-white/10 rounded-lg overflow-hidden flex-shrink-0">
-                                {product.images.length > 0 ? (
+                                {Array.isArray(product.images) && product.images.length > 0 ? (
                                   <img
                                     src={product.images[0]}
                                     alt={product.name}

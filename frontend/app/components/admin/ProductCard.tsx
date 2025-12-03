@@ -198,13 +198,13 @@ export default function ProductCard({ product, onUpdate, onEdit }: ProductCardPr
                 {product.description}
               </p>
             )}
-            {product.sizes && product.sizes.length > 0 && (
+            {Array.isArray(product.sizes) && product.sizes.length > 0 && (
               <div className="mb-2">
                 <span className="text-white/60 text-xs font-semibold">Tailles: </span>
                 <span className="text-white/80 text-xs">{product.sizes.join(', ')}</span>
               </div>
             )}
-            {product.colors && product.colors.length > 0 && (
+            {Array.isArray(product.colors) && product.colors.length > 0 && (
               <div>
                 <span className="text-white/60 text-xs font-semibold">Couleurs: </span>
                 <span className="text-white/80 text-xs">{product.colors.join(', ')}</span>
