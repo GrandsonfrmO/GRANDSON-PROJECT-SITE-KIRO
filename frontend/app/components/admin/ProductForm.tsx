@@ -2,7 +2,6 @@
 
 import { useState, FormEvent, ChangeEvent } from 'react';
 import { Product } from '../../types';
-import api from '../../lib/api';
 import ImageUpload from '../admin/ImageUpload';
 import ColorSelector from '../admin/ColorSelector';
 
@@ -94,12 +93,34 @@ export default function ProductForm({ product, onSuccess, onCancel }: ProductFor
         colors,
       };
 
+      const token = localStorage.getItem('adminToken');
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      };
+
       if (product) {
-        // Update existing product
-        await api.put(`/api/admin/products/${product.id}`, productData, true);
+        // Update existing product - use fetch directly to Next.js API route
+        const response = await fetch(`/api/admin/products/${product.id}`, {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify(productData),
+        });
+        const data = await response.json();
+        if (!data.success) {
+          throw new Error(data.error?.message || 'Erreur lors de la mise à jour');
+        }
       } else {
-        // Create new product
-        await api.post('/api/admin/products', productData, true);
+        // Create new product - use fetch directly to Next.js API route
+        const response = await fetch('/api/admin/products', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(productData),
+        });
+        const data = await response.json();
+        if (!data.success) {
+          throw new Error(data.error?.message || 'Erreur lors de la création');
+        }
       }
 
       onSuccess();

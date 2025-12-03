@@ -9,9 +9,27 @@ interface ProductCardProps {
   onEdit?: (product: Product) => void;
 }
 
+// Helper function to get proper image URL
+const getProductImageUrl = (imageUrl: string | undefined): string => {
+  if (!imageUrl) return '';
+  
+  // If it's already a full URL (http/https), return as-is
+  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    return imageUrl;
+  }
+  
+  // If it's a relative path, ensure it starts with /
+  if (!imageUrl.startsWith('/')) {
+    return `/${imageUrl}`;
+  }
+  
+  return imageUrl;
+};
+
 export default function ProductCard({ product, onUpdate, onEdit }: ProductCardProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('fr-GN', {
@@ -90,11 +108,12 @@ export default function ProductCard({ product, onUpdate, onEdit }: ProductCardPr
     <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl md:rounded-3xl overflow-hidden hover:bg-white/15 hover:shadow-2xl hover:-translate-y-2 hover:scale-[1.01] transition-all duration-300 group">
       {/* Product Image */}
       <div className="relative aspect-square bg-neutral-100 overflow-hidden">
-        {product.images[0] ? (
+        {product.images && product.images[0] && !imageError ? (
           <img 
-            src={product.images[0]} 
+            src={getProductImageUrl(product.images[0])} 
             alt={product.name}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+            onError={() => setImageError(true)}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-neutral-400 bg-gradient-to-br from-neutral-200 to-neutral-300">
