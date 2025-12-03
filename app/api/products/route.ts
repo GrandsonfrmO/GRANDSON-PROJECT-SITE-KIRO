@@ -14,11 +14,28 @@ const getSupabaseAdmin = () => {
   });
 };
 
+// Helper to parse JSON strings or return array as-is
+function parseJsonArray(value: any, defaultValue: any[] = []): any[] {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [parsed];
+    } catch {
+      return value ? [value] : defaultValue;
+    }
+  }
+  return defaultValue;
+}
+
 // Transform product data from snake_case to camelCase
 const transformProduct = (product: any) => {
   if (!product) return null;
   return {
     ...product,
+    images: parseJsonArray(product.images, []),
+    sizes: parseJsonArray(product.sizes, ['Unique']),
+    colors: product.colors ? parseJsonArray(product.colors) : null,
     isActive: product.is_active,
     createdAt: product.created_at,
     updatedAt: product.updated_at
