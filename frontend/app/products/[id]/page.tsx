@@ -1,16 +1,17 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import { Product } from '@/app/types';
 import Layout from '@/app/components/Layout';
 import { useCart } from '@/app/context/CartContext';
 import { transformProduct } from '@/app/lib/dataTransform';
+import { getImageUrl } from '@/app/lib/imageOptimization';
 
-export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  // Unwrap params using React.use()
-  const resolvedParams = use(params);
-  const productId = resolvedParams.id;
+export default function ProductDetailPage() {
+  // Use useParams hook instead of props - more reliable in production
+  const params = useParams();
+  const productId = params?.id as string;
   
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -147,7 +148,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             <div className="aspect-square bg-neutral-100 rounded-2xl overflow-hidden relative">
               {product.images && Array.isArray(product.images) && product.images.length > 0 ? (
                 <img
-                  src={product.images[selectedImage] || product.images[0]}
+                  src={getImageUrl(product.images[selectedImage] || product.images[0], 'detail')}
                   alt={product.name}
                   className="w-full h-full object-cover"
                 />
@@ -180,7 +181,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                       selectedImage === index ? 'border-accent scale-105' : 'border-transparent hover:border-neutral-300'
                     }`}
                   >
-                    <img src={image} alt={`${product.name} ${index + 1}`} className="w-full h-full object-cover" />
+                    <img src={getImageUrl(image, 'gallery')} alt={`${product.name} ${index + 1}`} className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>

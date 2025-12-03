@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Product } from '../types';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { getImageUrl } from '../lib/imageOptimization';
 
 interface ProductCardProps {
   product: Product;
@@ -12,9 +13,10 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [imageError, setImageError] = useState(false);
   const isMobile = useIsMobile();
 
-  // Safely get the first image
+  // Safely get the first image with proper URL handling
   const images = Array.isArray(product.images) ? product.images : [];
-  const firstImage = images.length > 0 ? images[0] : null;
+  const rawImage = images.length > 0 ? images[0] : null;
+  const firstImage = rawImage ? getImageUrl(rawImage, 'card') : null;
 
   return (
     <Link href={`/products/${product.id}`} className="touch-target group block">
