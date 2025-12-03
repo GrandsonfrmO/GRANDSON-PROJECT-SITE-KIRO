@@ -35,12 +35,12 @@ export default function WelcomePopup() {
           {/* Content */}
           <div className="relative p-8 text-center">
             {/* Icon */}
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-accent to-green-500 rounded-full mb-6 shadow-lg animate-bounce-slow">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-accent to-green-500 rounded-full mb-6 shadow-lg animate-bounce-slow relative z-10">
               <span className="text-4xl">👋</span>
             </div>
 
             {/* Title */}
-            <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
+            <h2 className="text-3xl md:text-4xl font-black text-white mb-4 relative z-0">
               <span className="bg-gradient-to-r from-white via-accent to-green-400 bg-clip-text text-transparent">
                 Bienvenue !
               </span>
