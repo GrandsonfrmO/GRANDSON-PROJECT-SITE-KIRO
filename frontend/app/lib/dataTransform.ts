@@ -17,15 +17,27 @@ function parseJsonArray(value: any, defaultValue: any[] = []): any[] {
 export function transformProduct(supabaseProduct: any) {
   if (!supabaseProduct) return null;
   
+  // Ensure images is always an array
+  let images = parseJsonArray(supabaseProduct.images, []);
+  if (!Array.isArray(images)) images = [];
+  
+  // Ensure sizes is always an array
+  let sizes = parseJsonArray(supabaseProduct.sizes, ['Unique']);
+  if (!Array.isArray(sizes)) sizes = ['Unique'];
+  
+  // Ensure colors is an array or null
+  let colors = supabaseProduct.colors ? parseJsonArray(supabaseProduct.colors) : null;
+  if (colors && !Array.isArray(colors)) colors = null;
+  
   return {
     ...supabaseProduct,
     isActive: supabaseProduct.is_active !== undefined ? supabaseProduct.is_active : (supabaseProduct.isActive !== undefined ? supabaseProduct.isActive : true),
     createdAt: supabaseProduct.created_at || supabaseProduct.createdAt,
     updatedAt: supabaseProduct.updated_at || supabaseProduct.updatedAt,
     stock: supabaseProduct.stock !== undefined ? supabaseProduct.stock : 0,
-    images: parseJsonArray(supabaseProduct.images, []),
-    sizes: parseJsonArray(supabaseProduct.sizes, ['Unique']),
-    colors: supabaseProduct.colors ? parseJsonArray(supabaseProduct.colors) : null,
+    images,
+    sizes,
+    colors,
   };
 }
 
