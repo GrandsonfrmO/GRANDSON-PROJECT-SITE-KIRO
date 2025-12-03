@@ -41,11 +41,11 @@ export function transformProduct(supabaseProduct: any) {
   // Final safety check
   if (!Array.isArray(sizes) || sizes.length === 0) sizes = ['Unique'];
   
-  // Ensure colors is an array or null
-  let colors = supabaseProduct.colors ? parseJsonArray(supabaseProduct.colors, []) : null;
+  // Ensure colors is an array or undefined
+  let colors = supabaseProduct.colors ? parseJsonArray(supabaseProduct.colors, []) : undefined;
   // Final safety check
-  if (colors && !Array.isArray(colors)) colors = null;
-  if (colors && colors.length === 0) colors = null;
+  if (colors && !Array.isArray(colors)) colors = undefined;
+  if (colors && colors.length === 0) colors = undefined;
   
   return {
     ...supabaseProduct,

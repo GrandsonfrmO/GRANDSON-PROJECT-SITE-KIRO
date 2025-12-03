@@ -42,7 +42,7 @@ export default function ProductManagement() {
         ...p,
         images: Array.isArray(p.images) ? p.images : [],
         sizes: Array.isArray(p.sizes) ? p.sizes : ['Unique'],
-        colors: Array.isArray(p.colors) ? p.colors : null,
+        colors: Array.isArray(p.colors) ? p.colors : undefined,
       }));
       setProducts(safeProducts);
     } catch (error) {
