@@ -6,12 +6,12 @@ import { Product } from '../../types';
 interface ProductCardProps {
   product: Product;
   onUpdate: () => void;
+  onEdit?: (product: Product) => void;
 }
 
-export default function ProductCard({ product, onUpdate }: ProductCardProps) {
+export default function ProductCard({ product, onUpdate, onEdit }: ProductCardProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('fr-GN', {
@@ -131,7 +131,7 @@ export default function ProductCard({ product, onUpdate }: ProductCardProps) {
             <span className="text-base md:text-lg">👁️</span>
           </button>
           <button
-            onClick={() => setShowEditModal(true)}
+            onClick={() => onEdit?.(product)}
             className="p-2 bg-blue-500/80 backdrop-blur-sm rounded-full text-white hover:bg-blue-500 transition-colors"
             title="Modifier"
           >
@@ -220,7 +220,7 @@ export default function ProductCard({ product, onUpdate }: ProductCardProps) {
           </button>
           
           <button 
-            onClick={() => setShowEditModal(true)}
+            onClick={() => onEdit?.(product)}
             disabled={isLoading}
             className="touch-target flex-1 py-2 bg-blue-500/20 text-blue-400 rounded-xl hover:bg-blue-500/30 md:hover:scale-105 transition-all duration-300 text-xs md:text-sm font-semibold disabled:opacity-50"
           >
@@ -239,291 +239,6 @@ export default function ProductCard({ product, onUpdate }: ProductCardProps) {
             <span className="sm:hidden">Suppr.</span>
           </button>
         </div>
-      </div>
-
-      {/* Edit Modal */}
-      {showEditModal && (
-        <EditProductModal
-          product={product}
-          onClose={() => setShowEditModal(false)}
-          onUpdate={() => {
-            setShowEditModal(false);
-            onUpdate();
-          }}
-        />
-      )}
-    </div>
-  );
-}
-
-// Edit Product Modal Component
-interface EditProductModalProps {
-  product: Product;
-  onClose: () => void;
-  onUpdate: () => void;
-}
-
-function EditProductModal({ product, onClose, onUpdate }: EditProductModalProps) {
-  const [formData, setFormData] = useState({
-    name: product.name,
-    description: product.description,
-    price: product.price.toString(),
-    category: product.category,
-    sizes: product.sizes || [],
-    colors: product.colors || [],
-    stock: product.stock.toString(),
-    images: product.images.join(', ')
-  });
-  const [isLoading, setIsLoading] = useState(false);
-
-  const categories = [
-    'Tshirt',
-    'Survêtement',
-    'Pull',
-    'Accessoires',
-    'Masque',
-    'Casquette',
-    'Bonnet'
-  ];
-
-  const toggleSize = (size: string) => {
-    if (formData.sizes.includes(size)) {
-      setFormData({...formData, sizes: formData.sizes.filter(s => s !== size)});
-    } else {
-      setFormData({...formData, sizes: [...formData.sizes, size]});
-    }
-  };
-
-  const toggleColor = (color: string) => {
-    if (formData.colors.includes(color)) {
-      setFormData({...formData, colors: formData.colors.filter(c => c !== color)});
-    } else {
-      setFormData({...formData, colors: [...formData.colors, color]});
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch(`/api/products/${product.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          description: formData.description,
-          price: parseFloat(formData.price),
-          category: formData.category,
-          sizes: formData.sizes,
-          colors: formData.colors,
-          stock: parseInt(formData.stock),
-          images: formData.images.split(',').map(i => i.trim()).filter(i => i)
-        }),
-      });
-
-      if (response.ok) {
-        onUpdate();
-      } else {
-        const error = await response.json();
-        alert(error.error?.message || 'Erreur lors de la mise à jour');
-      }
-    } catch (error) {
-      console.error('Erreur mise à jour:', error);
-      alert('Erreur lors de la mise à jour');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fadeIn overflow-y-auto">
-      <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 md:p-8 w-full max-w-5xl my-8 shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
-              <span className="text-xl">✏️</span>
-            </div>
-            <h3 className="text-white text-xl md:text-2xl font-bold">Modifier le produit</h3>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-all"
-          >
-            ✕
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Informations de base */}
-          <div className="grid grid-mobile-1 grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="lg:col-span-2">
-              <label className="block text-white font-medium mb-2">Nom du produit *</label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                className="w-full px-4 py-3 rounded-xl text-white placeholder-white/50 bg-white/10 border border-white/20 focus:border-accent focus:ring-4 focus:ring-accent/20 transition-all duration-300"
-                placeholder="Ex: Boubou Traditionnel"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-white font-medium mb-2">Prix (GNF) *</label>
-              <input
-                type="number"
-                value={formData.price}
-                onChange={(e) => setFormData({...formData, price: e.target.value})}
-                className="w-full px-4 py-3 rounded-xl text-white placeholder-white/50 bg-white/10 border border-white/20 focus:border-accent focus:ring-4 focus:ring-accent/20 transition-all duration-300"
-                placeholder="85000"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-white font-medium mb-2">Stock *</label>
-              <input
-                type="number"
-                value={formData.stock}
-                onChange={(e) => setFormData({...formData, stock: e.target.value})}
-                className="w-full px-4 py-3 rounded-xl text-white placeholder-white/50 bg-white/10 border border-white/20 focus:border-accent focus:ring-4 focus:ring-accent/20 transition-all duration-300"
-                placeholder="25"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-white font-medium mb-2">Catégorie *</label>
-              <select
-                value={formData.category}
-                onChange={(e) => setFormData({...formData, category: e.target.value})}
-                className="w-full px-4 py-3 rounded-xl text-white bg-white/10 border border-white/20 focus:border-accent focus:ring-4 focus:ring-accent/20 transition-all duration-300"
-                required
-              >
-                {categories.map(cat => (
-                  <option key={cat} value={cat} className="bg-gray-800">{cat}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="lg:col-span-2">
-              <label className="block text-white font-medium mb-2">Description</label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
-                rows={3}
-                className="w-full px-4 py-3 rounded-xl text-white placeholder-white/50 resize-none bg-white/10 border border-white/20 focus:border-accent focus:ring-4 focus:ring-accent/20 transition-all duration-300"
-                placeholder="Description du produit..."
-              />
-            </div>
-          </div>
-
-          {/* Variantes */}
-          <div className="border-t border-white/10 pt-6">
-            <h4 className="text-white font-medium text-lg mb-5">Variantes</h4>
-            
-            <div className="grid grid-mobile-1 grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Tailles */}
-              <div>
-                <label className="block text-white/80 text-sm mb-3">Tailles disponibles</label>
-                <div className="flex flex-wrap gap-2">
-                {['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'].map(size => (
-                  <button
-                    key={size}
-                    type="button"
-                    onClick={() => toggleSize(size)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                      formData.sizes.includes(size)
-                        ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
-                        : 'bg-white/10 text-white/70 hover:bg-white/20'
-                    }`}
-                  >
-                    {size}
-                  </button>
-                ))}
-              </div>
-                {formData.sizes.length > 0 && (
-                  <p className="text-emerald-400 text-xs mt-2">
-                    ✓ {formData.sizes.length} taille(s): {formData.sizes.join(', ')}
-                  </p>
-                )}
-              </div>
-
-              {/* Couleurs */}
-              <div>
-                <label className="block text-white/80 text-sm mb-3">Couleurs disponibles</label>
-                <div className="flex flex-wrap gap-2">
-                {[
-                  { name: 'Blanc', color: '#FFFFFF', border: true },
-                  { name: 'Noir', color: '#000000' },
-                  { name: 'Rouge', color: '#EF4444' },
-                  { name: 'Bleu', color: '#3B82F6' },
-                  { name: 'Vert', color: '#10B981' },
-                  { name: 'Jaune', color: '#F59E0B' },
-                  { name: 'Rose', color: '#EC4899' },
-                  { name: 'Violet', color: '#8B5CF6' },
-                  { name: 'Orange', color: '#F97316' },
-                  { name: 'Marron', color: '#92400E' }
-                ].map(({ name, color, border }) => (
-                  <button
-                    key={name}
-                    type="button"
-                    onClick={() => toggleColor(name)}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                      formData.colors.includes(name)
-                        ? 'bg-white/20 text-white ring-2 ring-white/60 shadow-lg'
-                        : 'bg-white/10 text-white/70 hover:bg-white/20'
-                    }`}
-                  >
-                    <div 
-                      className={`w-4 h-4 rounded-full ${border ? 'border-2 border-gray-400' : ''}`}
-                      style={{ backgroundColor: color }}
-                    />
-                    {name}
-                  </button>
-                ))}
-              </div>
-                {formData.colors.length > 0 && (
-                  <p className="text-emerald-400 text-xs mt-2">
-                    ✓ {formData.colors.length} couleur(s): {formData.colors.join(', ')}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Boutons d'action */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-white/10">
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold rounded-xl hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  Mise à jour...
-                </span>
-              ) : (
-                '✨ Mettre à jour'
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isLoading}
-              className="px-6 py-3 bg-red-500/20 text-red-300 rounded-xl hover:bg-red-500/30 transition-all disabled:opacity-50"
-            >
-              Annuler
-            </button>
-          </div>
-        </form>
       </div>
     </div>
   );

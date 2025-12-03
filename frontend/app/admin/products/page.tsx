@@ -179,6 +179,7 @@ export default function ProductManagement() {
                 onProductUpdate={fetchProducts}
                 searchTerm={searchTerm}
                 filterCategory={filterCategory}
+                onEdit={handleEdit}
               />
             )}
           </div>

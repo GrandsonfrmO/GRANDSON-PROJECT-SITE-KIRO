@@ -128,4 +128,106 @@ describe('Product Management Tests', () => {
       expect(api.default.delete).toHaveBeenCalledWith('/api/admin/products/1', true);
     });
   });
+
+  test('should display edit form when edit button is clicked', async () => {
+    // Mock fetch for products list
+    global.fetch = jest.fn((url) => {
+      if (url === '/api/admin/products') {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ products: mockProducts }),
+        });
+      }
+      return Promise.reject(new Error('Unknown URL'));
+    }) as jest.Mock;
+
+    renderProductManagement();
+
+    // Wait for products to load
+    await waitFor(() => {
+      expect(screen.getByText('Test T-Shirt')).toBeInTheDocument();
+    });
+
+    // Find and click the edit button (using the emoji or text)
+    const editButtons = screen.getAllByText(/Modifier|Edit/i);
+    fireEvent.click(editButtons[0]);
+
+    // Verify the form is displayed with the product data
+    await waitFor(() => {
+      expect(screen.getByText(/Modifier le produit/i)).toBeInTheDocument();
+    });
+
+    // Verify the form is populated with product data
+    const nameInput = screen.getByDisplayValue('Test T-Shirt');
+    expect(nameInput).toBeInTheDocument();
+  });
+
+  test('should hide product list and show form when editing', async () => {
+    // Mock fetch for products list
+    global.fetch = jest.fn((url) => {
+      if (url === '/api/admin/products') {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ products: mockProducts }),
+        });
+      }
+      return Promise.reject(new Error('Unknown URL'));
+    }) as jest.Mock;
+
+    renderProductManagement();
+
+    // Wait for products to load
+    await waitFor(() => {
+      expect(screen.getByText('Test T-Shirt')).toBeInTheDocument();
+    });
+
+    // Click edit button
+    const editButtons = screen.getAllByText(/Modifier|Edit/i);
+    fireEvent.click(editButtons[0]);
+
+    // Verify product list is hidden and form is shown
+    await waitFor(() => {
+      expect(screen.getByText(/Modifier le produit/i)).toBeInTheDocument();
+      expect(screen.queryByText('Gestion des Produits')).not.toBeInTheDocument();
+    });
+  });
+
+  test('should return to product list when cancel is clicked', async () => {
+    // Mock fetch for products list
+    global.fetch = jest.fn((url) => {
+      if (url === '/api/admin/products') {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ products: mockProducts }),
+        });
+      }
+      return Promise.reject(new Error('Unknown URL'));
+    }) as jest.Mock;
+
+    renderProductManagement();
+
+    // Wait for products to load
+    await waitFor(() => {
+      expect(screen.getByText('Test T-Shirt')).toBeInTheDocument();
+    });
+
+    // Click edit button
+    const editButtons = screen.getAllByText(/Modifier|Edit/i);
+    fireEvent.click(editButtons[0]);
+
+    // Wait for form to appear
+    await waitFor(() => {
+      expect(screen.getByText(/Modifier le produit/i)).toBeInTheDocument();
+    });
+
+    // Click cancel button
+    const cancelButton = screen.getByText('Annuler');
+    fireEvent.click(cancelButton);
+
+    // Verify we're back to the product list
+    await waitFor(() => {
+      expect(screen.getByText('Gestion des Produits')).toBeInTheDocument();
+      expect(screen.getByText('Test T-Shirt')).toBeInTheDocument();
+    });
+  });
 });

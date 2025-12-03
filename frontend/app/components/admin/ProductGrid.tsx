@@ -9,13 +9,15 @@ interface ProductGridProps {
   onProductUpdate: () => void;
   searchTerm: string;
   filterCategory: string;
+  onEdit?: (product: Product) => void;
 }
 
 export default function ProductGrid({ 
   products, 
   onProductUpdate, 
   searchTerm, 
-  filterCategory 
+  filterCategory,
+  onEdit
 }: ProductGridProps) {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState<'name' | 'price' | 'stock' | 'createdAt'>('createdAt');
@@ -135,6 +137,7 @@ export default function ProductGrid({
                   key={product.id}
                   product={product}
                   onUpdate={onProductUpdate}
+                  onEdit={onEdit}
                 />
               ))}
             </div>
@@ -200,10 +203,10 @@ export default function ProductGrid({
                           </td>
                           <td className="py-4 px-6">
                             <div className="flex gap-2">
-                              <button className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-colors text-sm">
-                                👁️ Voir
-                              </button>
-                              <button className="px-3 py-1 bg-orange-500/20 text-orange-400 rounded-lg hover:bg-orange-500/30 transition-colors text-sm">
+                              <button 
+                                onClick={() => onEdit?.(product)}
+                                className="px-3 py-1 bg-orange-500/20 text-orange-400 rounded-lg hover:bg-orange-500/30 transition-colors text-sm"
+                              >
                                 ✏️ Modifier
                               </button>
                             </div>
