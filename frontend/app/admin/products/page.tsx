@@ -37,7 +37,14 @@ export default function ProductManagement() {
       const productsList = data.products || data.data?.products || [];
       // Transformer les produits pour s'assurer que images/sizes sont des tableaux
       const transformedProducts = transformProducts(productsList);
-      setProducts(transformedProducts);
+      // Double vérification que tous les produits ont des tableaux valides
+      const safeProducts = transformedProducts.map((p: Product) => ({
+        ...p,
+        images: Array.isArray(p.images) ? p.images : [],
+        sizes: Array.isArray(p.sizes) ? p.sizes : ['Unique'],
+        colors: Array.isArray(p.colors) ? p.colors : null,
+      }));
+      setProducts(safeProducts);
     } catch (error) {
       console.error('Error fetching products:', error);
       setProducts([]);

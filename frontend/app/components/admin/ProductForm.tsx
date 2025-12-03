@@ -14,6 +14,20 @@ interface ProductFormProps {
 const CATEGORIES = ['T-Shirts', 'Sweats', 'Pantalons', 'Shorts', 'Jort', 'Survêtements', 'Bonnets', 'Masques', 'Casquettes'];
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
+// Helper function to ensure value is always an array
+const ensureArray = (value: any): string[] => {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : (parsed ? [parsed] : []);
+    } catch {
+      return value ? [value] : [];
+    }
+  }
+  return [];
+};
+
 export default function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) {
   const [formData, setFormData] = useState({
     name: product?.name || '',
@@ -22,10 +36,10 @@ export default function ProductForm({ product, onSuccess, onCancel }: ProductFor
     category: product?.category || CATEGORIES[0],
     stock: product?.stock || 0,
     isActive: product?.isActive ?? true,
-    sizes: product?.sizes || [],
+    sizes: ensureArray(product?.sizes),
   });
-  const [images, setImages] = useState<string[]>(product?.images || []);
-  const [colors, setColors] = useState<string[]>(product?.colors || []);
+  const [images, setImages] = useState<string[]>(ensureArray(product?.images));
+  const [colors, setColors] = useState<string[]>(ensureArray(product?.colors));
   const [customCategory, setCustomCategory] = useState('');
   const [showCustomCategory, setShowCustomCategory] = useState(false);
   const [loading, setLoading] = useState(false);

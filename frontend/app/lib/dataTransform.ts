@@ -2,16 +2,30 @@
 
 // Helper to parse JSON strings or return array as-is
 function parseJsonArray(value: any, defaultValue: any[] = []): any[] {
+  // Already an array - return as-is
   if (Array.isArray(value)) return value;
+  
+  // Null or undefined - return default
+  if (value === null || value === undefined) return defaultValue;
+  
+  // String - try to parse as JSON
   if (typeof value === 'string') {
+    // Empty string
+    if (!value.trim()) return defaultValue;
+    
     try {
       const parsed = JSON.parse(value);
-      return Array.isArray(parsed) ? parsed : [parsed];
+      if (Array.isArray(parsed)) return parsed;
+      // If parsed is a non-null value, wrap in array
+      return parsed ? [parsed] : defaultValue;
     } catch {
-      return value ? [value] : defaultValue;
+      // Not valid JSON, treat as single value
+      return [value];
     }
   }
-  return defaultValue;
+  
+  // Object or other type - wrap in array if truthy
+  return value ? [value] : defaultValue;
 }
 
 export function transformProduct(supabaseProduct: any) {
@@ -19,15 +33,19 @@ export function transformProduct(supabaseProduct: any) {
   
   // Ensure images is always an array
   let images = parseJsonArray(supabaseProduct.images, []);
+  // Final safety check
   if (!Array.isArray(images)) images = [];
   
   // Ensure sizes is always an array
   let sizes = parseJsonArray(supabaseProduct.sizes, ['Unique']);
-  if (!Array.isArray(sizes)) sizes = ['Unique'];
+  // Final safety check
+  if (!Array.isArray(sizes) || sizes.length === 0) sizes = ['Unique'];
   
   // Ensure colors is an array or null
-  let colors = supabaseProduct.colors ? parseJsonArray(supabaseProduct.colors) : null;
+  let colors = supabaseProduct.colors ? parseJsonArray(supabaseProduct.colors, []) : null;
+  // Final safety check
   if (colors && !Array.isArray(colors)) colors = null;
+  if (colors && colors.length === 0) colors = null;
   
   return {
     ...supabaseProduct,

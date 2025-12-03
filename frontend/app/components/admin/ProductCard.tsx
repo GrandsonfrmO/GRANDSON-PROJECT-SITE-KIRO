@@ -201,13 +201,13 @@ export default function ProductCard({ product, onUpdate, onEdit }: ProductCardPr
             {Array.isArray(product.sizes) && product.sizes.length > 0 && (
               <div className="mb-2">
                 <span className="text-white/60 text-xs font-semibold">Tailles: </span>
-                <span className="text-white/80 text-xs">{product.sizes.join(', ')}</span>
+                <span className="text-white/80 text-xs">{(Array.isArray(product.sizes) ? product.sizes : []).join(', ')}</span>
               </div>
             )}
             {Array.isArray(product.colors) && product.colors.length > 0 && (
               <div>
                 <span className="text-white/60 text-xs font-semibold">Couleurs: </span>
-                <span className="text-white/80 text-xs">{product.colors.join(', ')}</span>
+                <span className="text-white/80 text-xs">{(Array.isArray(product.colors) ? product.colors : []).join(', ')}</span>
               </div>
             )}
           </div>
