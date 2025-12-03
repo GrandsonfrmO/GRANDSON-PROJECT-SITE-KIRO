@@ -36,33 +36,79 @@ export default function PersonnalisationPage() {
 
   return (
     <Layout>
-      {/* Hero Section - Compact */}
+      {/* Hero Section - Enhanced */}
       <div className={`relative bg-gradient-to-br from-black via-neutral-900 to-neutral-800 text-white overflow-hidden ${
-        isMobile ? 'py-8' : 'py-12'
+        isMobile ? 'py-12' : 'py-20'
       }`}>
         <ParticleBackground />
         
         <div className="absolute inset-0">
-          <div className="absolute top-10 left-5 w-40 h-40 bg-accent/10 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-10 right-5 w-48 h-48 bg-green-500/5 rounded-full blur-3xl"></div>
+          <div className="absolute top-10 left-5 w-64 h-64 bg-accent/10 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-10 right-5 w-72 h-72 bg-green-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-radial from-accent/5 to-transparent rounded-full"></div>
         </div>
 
         <div className="relative container mx-auto mobile-px">
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-2 mb-3">
-              <span className={`${isMobile ? 'text-3xl' : 'text-4xl'}`}>🎨</span>
-              <span className={`${isMobile ? 'text-3xl' : 'text-4xl'}`}>✨</span>
+          <div className="text-center max-w-4xl mx-auto">
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-accent/20 to-green-500/20 border border-accent/30 rounded-full px-6 py-2 mb-6 backdrop-blur-sm">
+              <span className="w-2 h-2 bg-accent rounded-full animate-pulse"></span>
+              <span className={`text-accent font-bold uppercase tracking-wider ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                Service Premium
+              </span>
+              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse delay-500"></span>
+            </div>
+
+            {/* Icons */}
+            <div className="flex items-center justify-center gap-4 mb-6">
+              <div className="relative">
+                <span className={`${isMobile ? 'text-4xl' : 'text-6xl'} animate-bounce`}>🎨</span>
+                <span className="absolute -top-2 -right-2 w-4 h-4 bg-accent rounded-full animate-ping"></span>
+              </div>
+              <span className={`${isMobile ? 'text-4xl' : 'text-6xl'} animate-bounce delay-300`}>✨</span>
+              <div className="relative">
+                <span className={`${isMobile ? 'text-4xl' : 'text-6xl'} animate-bounce delay-500`}>🎁</span>
+                <span className="absolute -top-2 -right-2 w-4 h-4 bg-green-400 rounded-full animate-ping delay-500"></span>
+              </div>
             </div>
             
-            <h1 className={`font-black uppercase bg-gradient-to-r from-white via-accent to-green-400 bg-clip-text text-transparent mb-2 ${
-              isMobile ? 'text-2xl' : 'text-4xl'
+            {/* Title */}
+            <h1 className={`font-black uppercase leading-tight mb-4 ${
+              isMobile ? 'text-4xl' : 'text-6xl md:text-7xl'
             }`}>
-              Personnalisation
+              <span className="bg-gradient-to-r from-white via-accent to-green-400 bg-clip-text text-transparent animate-gradient">
+                Personnalisation
+              </span>
+              <span className="block text-accent mt-2">Premium</span>
             </h1>
             
-            <p className={`text-neutral-300 max-w-xl mx-auto ${isMobile ? 'text-sm' : 'text-base'}`}>
-              Créez des pièces uniques • Délai 2-3 jours
+            {/* Description */}
+            <p className={`text-neutral-300 max-w-2xl mx-auto leading-relaxed mb-8 ${isMobile ? 'text-base' : 'text-xl'}`}>
+              Transformez vos idées en réalité avec notre service de personnalisation haut de gamme. 
+              Qualité professionnelle garantie.
             </p>
+
+            {/* Features */}
+            <div className={`flex items-center justify-center gap-6 flex-wrap ${isMobile ? 'text-sm' : 'text-base'}`}>
+              <div className="flex items-center gap-2 text-neutral-400">
+                <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Délai 2-3 jours</span>
+              </div>
+              <div className="flex items-center gap-2 text-neutral-400">
+                <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Qualité Pro</span>
+              </div>
+              <div className="flex items-center gap-2 text-neutral-400">
+                <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Express 24h</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -90,91 +136,158 @@ export default function PersonnalisationPage() {
           </div>
         </div>
 
-        {/* Services Overview - Compact */}
-        <div className={`${isMobile ? 'mb-8' : 'mb-12'}`}>
-          <h2 className={`font-black text-neutral-900 text-center mb-4 ${isMobile ? 'text-xl' : 'text-2xl'}`}>
-            Nos Services
-          </h2>
+        {/* Services Overview - Enhanced */}
+        <div className={`${isMobile ? 'mb-10' : 'mb-16'}`}>
+          <div className="text-center mb-8">
+            <h2 className={`font-black text-neutral-900 mb-3 ${isMobile ? 'text-2xl' : 'text-4xl'}`}>
+              Nos Services
+            </h2>
+            <p className={`text-neutral-600 max-w-2xl mx-auto ${isMobile ? 'text-sm' : 'text-lg'}`}>
+              Des solutions complètes pour tous vos besoins de personnalisation
+            </p>
+          </div>
 
-          <div className={`grid gap-3 ${isMobile ? 'grid-cols-2' : 'grid-cols-4'}`}>
-            <div className="bg-white rounded-xl p-3 border border-neutral-200 text-center">
-              <span className="text-2xl block mb-1">🖨️</span>
-              <h3 className={`font-bold text-neutral-900 ${isMobile ? 'text-xs' : 'text-sm'}`}>Impression</h3>
+          <div className={`grid gap-4 ${isMobile ? 'grid-cols-2' : 'grid-cols-4'}`}>
+            <div className="group relative bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 border-2 border-blue-200 text-center transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200/50">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/0 to-blue-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <span className={`block mb-3 transition-transform duration-300 group-hover:scale-110 ${isMobile ? 'text-3xl' : 'text-4xl'}`}>🖨️</span>
+              <h3 className={`font-black text-neutral-900 mb-2 ${isMobile ? 'text-sm' : 'text-lg'}`}>Impression</h3>
+              <p className={`text-neutral-600 ${isMobile ? 'text-xs' : 'text-sm'}`}>Haute qualité</p>
             </div>
-            <div className="bg-white rounded-xl p-3 border border-neutral-200 text-center">
-              <span className="text-2xl block mb-1">🎸</span>
-              <h3 className={`font-bold text-neutral-900 ${isMobile ? 'text-xs' : 'text-sm'}`}>Bootleg</h3>
+            
+            <div className="group relative bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6 border-2 border-purple-200 text-center transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-purple-200/50">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 to-purple-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <span className={`block mb-3 transition-transform duration-300 group-hover:scale-110 ${isMobile ? 'text-3xl' : 'text-4xl'}`}>🎸</span>
+              <h3 className={`font-black text-neutral-900 mb-2 ${isMobile ? 'text-sm' : 'text-lg'}`}>Bootleg</h3>
+              <p className={`text-neutral-600 ${isMobile ? 'text-xs' : 'text-sm'}`}>Style vintage</p>
             </div>
-            <div className="bg-white rounded-xl p-3 border border-neutral-200 text-center">
-              <span className="text-2xl block mb-1">🎁</span>
-              <h3 className={`font-bold text-neutral-900 ${isMobile ? 'text-xs' : 'text-sm'}`}>Cadeaux</h3>
+            
+            <div className="group relative bg-gradient-to-br from-pink-50 to-pink-100 rounded-2xl p-6 border-2 border-pink-200 text-center transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-pink-200/50">
+              <div className="absolute inset-0 bg-gradient-to-br from-pink-500/0 to-pink-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <span className={`block mb-3 transition-transform duration-300 group-hover:scale-110 ${isMobile ? 'text-3xl' : 'text-4xl'}`}>🎁</span>
+              <h3 className={`font-black text-neutral-900 mb-2 ${isMobile ? 'text-sm' : 'text-lg'}`}>Cadeaux</h3>
+              <p className={`text-neutral-600 ${isMobile ? 'text-xs' : 'text-sm'}`}>Personnalisés</p>
             </div>
-            <div className="bg-white rounded-xl p-3 border border-neutral-200 text-center">
-              <span className="text-2xl block mb-1">🎨</span>
-              <h3 className={`font-bold text-neutral-900 ${isMobile ? 'text-xs' : 'text-sm'}`}>Design</h3>
+            
+            <div className="group relative bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 border-2 border-green-200 text-center transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-green-200/50">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-500/0 to-green-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <span className={`block mb-3 transition-transform duration-300 group-hover:scale-110 ${isMobile ? 'text-3xl' : 'text-4xl'}`}>🎨</span>
+              <h3 className={`font-black text-neutral-900 mb-2 ${isMobile ? 'text-sm' : 'text-lg'}`}>Design</h3>
+              <p className={`text-neutral-600 ${isMobile ? 'text-xs' : 'text-sm'}`}>Sur mesure</p>
             </div>
           </div>
         </div>
 
-        {/* Pricing Section - Compact */}
-        <div className={`relative bg-gradient-to-br from-black via-neutral-900 to-black rounded-2xl overflow-hidden ${
-          isMobile ? 'p-4 mb-8' : 'p-6 mb-12'
+        {/* Pricing Section - Enhanced */}
+        <div className={`relative bg-gradient-to-br from-black via-neutral-900 to-black rounded-3xl overflow-hidden ${
+          isMobile ? 'p-6 mb-10' : 'p-10 mb-16'
         }`}>
-          <div className="relative z-10">
-            <h2 className={`font-black text-white text-center mb-4 ${isMobile ? 'text-xl' : 'text-2xl'}`}>
-              💰 Tarifs
-            </h2>
+          {/* Animated Background */}
+          <div className="absolute inset-0">
+            <div className="absolute top-0 left-0 w-64 h-64 bg-accent/10 rounded-full blur-3xl animate-pulse"></div>
+            <div className="absolute bottom-0 right-0 w-64 h-64 bg-green-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+          </div>
 
-            <div className={`grid gap-3 ${isMobile ? 'grid-cols-2' : 'grid-cols-3'}`}>
+          <div className="relative z-10">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-accent/20 to-green-500/20 border border-accent/30 rounded-full px-6 py-2 mb-4">
+                <span className="text-2xl">💰</span>
+                <span className={`text-accent font-bold uppercase tracking-wider ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                  Tarifs Transparents
+                </span>
+              </div>
+              <h2 className={`font-black text-white mb-3 ${isMobile ? 'text-2xl' : 'text-4xl'}`}>
+                Prix Compétitifs
+              </h2>
+              <p className={`text-neutral-400 ${isMobile ? 'text-sm' : 'text-base'}`}>
+                Qualité premium à prix abordable
+              </p>
+            </div>
+
+            <div className={`grid gap-4 ${isMobile ? 'grid-cols-2' : 'grid-cols-3'}`}>
               {/* T-shirts */}
-              <div className="bg-white/10 rounded-xl p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xl">👕</span>
-                  <span className={`font-bold text-white ${isMobile ? 'text-xs' : 'text-sm'}`}>T-shirts</span>
+              <div className="group relative bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10 transition-all duration-300 hover:scale-105 hover:border-accent/50 hover:shadow-lg hover:shadow-accent/20">
+                <div className="absolute inset-0 bg-gradient-to-br from-accent/0 to-accent/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="relative">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className={`${isMobile ? 'text-2xl' : 'text-3xl'} transition-transform duration-300 group-hover:scale-110`}>👕</span>
+                    <span className={`font-bold text-white ${isMobile ? 'text-sm' : 'text-base'}`}>T-shirts</span>
+                  </div>
+                  <p className={`text-accent font-black ${isMobile ? 'text-lg' : 'text-2xl'}`}>80-120K</p>
+                  <p className={`text-neutral-400 mt-1 ${isMobile ? 'text-xs' : 'text-sm'}`}>GNF</p>
                 </div>
-                <p className={`text-accent font-black ${isMobile ? 'text-sm' : 'text-base'}`}>80-120K</p>
               </div>
 
               {/* Bootleg */}
-              <div className="bg-white/10 rounded-xl p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xl">🎸</span>
-                  <span className={`font-bold text-white ${isMobile ? 'text-xs' : 'text-sm'}`}>Bootleg</span>
+              <div className="group relative bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10 transition-all duration-300 hover:scale-105 hover:border-green-400/50 hover:shadow-lg hover:shadow-green-400/20">
+                <div className="absolute inset-0 bg-gradient-to-br from-green-500/0 to-green-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="relative">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className={`${isMobile ? 'text-2xl' : 'text-3xl'} transition-transform duration-300 group-hover:scale-110`}>🎸</span>
+                    <span className={`font-bold text-white ${isMobile ? 'text-sm' : 'text-base'}`}>Bootleg</span>
+                  </div>
+                  <p className={`text-green-400 font-black ${isMobile ? 'text-lg' : 'text-2xl'}`}>120-150K</p>
+                  <p className={`text-neutral-400 mt-1 ${isMobile ? 'text-xs' : 'text-sm'}`}>GNF</p>
                 </div>
-                <p className={`text-green-400 font-black ${isMobile ? 'text-sm' : 'text-base'}`}>120-150K</p>
               </div>
 
               {/* Pulls */}
-              <div className="bg-white/10 rounded-xl p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xl">🧥</span>
-                  <span className={`font-bold text-white ${isMobile ? 'text-xs' : 'text-sm'}`}>Pulls</span>
+              <div className="group relative bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10 transition-all duration-300 hover:scale-105 hover:border-accent/50 hover:shadow-lg hover:shadow-accent/20">
+                <div className="absolute inset-0 bg-gradient-to-br from-accent/0 to-accent/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="relative">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className={`${isMobile ? 'text-2xl' : 'text-3xl'} transition-transform duration-300 group-hover:scale-110`}>🧥</span>
+                    <span className={`font-bold text-white ${isMobile ? 'text-sm' : 'text-base'}`}>Pulls</span>
+                  </div>
+                  <p className={`text-accent font-black ${isMobile ? 'text-lg' : 'text-2xl'}`}>180-220K</p>
+                  <p className={`text-neutral-400 mt-1 ${isMobile ? 'text-xs' : 'text-sm'}`}>GNF</p>
                 </div>
-                <p className={`text-accent font-black ${isMobile ? 'text-sm' : 'text-base'}`}>180-220K</p>
               </div>
 
               {/* Survêtements */}
-              <div className="bg-white/10 rounded-xl p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xl">🏃</span>
-                  <span className={`font-bold text-white ${isMobile ? 'text-xs' : 'text-sm'}`}>Survêt.</span>
+              <div className="group relative bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10 transition-all duration-300 hover:scale-105 hover:border-green-400/50 hover:shadow-lg hover:shadow-green-400/20">
+                <div className="absolute inset-0 bg-gradient-to-br from-green-500/0 to-green-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="relative">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className={`${isMobile ? 'text-2xl' : 'text-3xl'} transition-transform duration-300 group-hover:scale-110`}>🏃</span>
+                    <span className={`font-bold text-white ${isMobile ? 'text-sm' : 'text-base'}`}>Survêtements</span>
+                  </div>
+                  <p className={`text-green-400 font-black ${isMobile ? 'text-lg' : 'text-2xl'}`}>280-350K</p>
+                  <p className={`text-neutral-400 mt-1 ${isMobile ? 'text-xs' : 'text-sm'}`}>GNF</p>
                 </div>
-                <p className={`text-green-400 font-black ${isMobile ? 'text-sm' : 'text-base'}`}>280-350K</p>
               </div>
 
               {/* Accessoires */}
-              <div className="bg-white/10 rounded-xl p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xl">🧢</span>
-                  <span className={`font-bold text-white ${isMobile ? 'text-xs' : 'text-sm'}`}>Access.</span>
+              <div className="group relative bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10 transition-all duration-300 hover:scale-105 hover:border-accent/50 hover:shadow-lg hover:shadow-accent/20">
+                <div className="absolute inset-0 bg-gradient-to-br from-accent/0 to-accent/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="relative">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className={`${isMobile ? 'text-2xl' : 'text-3xl'} transition-transform duration-300 group-hover:scale-110`}>🧢</span>
+                    <span className={`font-bold text-white ${isMobile ? 'text-sm' : 'text-base'}`}>Accessoires</span>
+                  </div>
+                  <p className={`text-accent font-black ${isMobile ? 'text-lg' : 'text-2xl'}`}>80K+</p>
+                  <p className={`text-neutral-400 mt-1 ${isMobile ? 'text-xs' : 'text-sm'}`}>GNF</p>
                 </div>
-                <p className={`text-accent font-black ${isMobile ? 'text-sm' : 'text-base'}`}>80K</p>
               </div>
 
               {/* Délai */}
-              <div className="bg-green-500/20 rounded-xl p-3 text-center">
-                <span className="text-xl block">⏱️</span>
-                <p className={`text-green-400 font-black ${isMobile ? 'text-sm' : 'text-base'}`}>2-3 jours</p>
+              <div className="group relative bg-gradient-to-br from-green-500/20 to-green-600/20 backdrop-blur-sm rounded-2xl p-5 border-2 border-green-400/30 transition-all duration-300 hover:scale-105 hover:border-green-400/60 hover:shadow-lg hover:shadow-green-400/30">
+                <div className="absolute inset-0 bg-gradient-to-br from-green-400/0 to-green-400/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="relative text-center">
+                  <span className={`block mb-2 ${isMobile ? 'text-3xl' : 'text-4xl'} transition-transform duration-300 group-hover:scale-110`}>⏱️</span>
+                  <p className={`text-green-400 font-black mb-1 ${isMobile ? 'text-lg' : 'text-2xl'}`}>2-3 jours</p>
+                  <p className={`text-neutral-300 ${isMobile ? 'text-xs' : 'text-sm'}`}>Délai standard</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Express Option */}
+            <div className="mt-6 text-center">
+              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-400/30 rounded-full px-6 py-3 backdrop-blur-sm">
+                <span className="text-xl">⚡</span>
+                <span className={`text-yellow-400 font-bold ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                  Service Express 24h disponible (+50%)
+                </span>
               </div>
             </div>
           </div>

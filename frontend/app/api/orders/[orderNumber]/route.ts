@@ -19,7 +19,8 @@ const demoOrder = {
       price: 45000,
       quantity: 2,
       size: 'M',
-      color: 'Noir'
+      color: 'Noir',
+      images: []
     }
   ],
   deliveryInfo: {

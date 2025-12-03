@@ -263,9 +263,13 @@ export default function OrderConfirmationPage() {
                 </h3>
                 <div className="space-y-4">
                   {order.items.map((item) => {
-                    // Support both nested product and flat structure
+                    // Support both nested product and flat structure with safe fallbacks
                     const itemName = item.product?.name || item.name || 'Produit';
-                    const itemImages = item.product?.images || item.images || [];
+                    // Safely get images array - handle undefined, null, and non-array values
+                    const productImages = item.product?.images;
+                    const itemImagesRaw = item.images;
+                    const itemImages = Array.isArray(productImages) ? productImages : 
+                                       Array.isArray(itemImagesRaw) ? itemImagesRaw : [];
                     const hasImage = itemImages.length > 0;
                     
                     return (
