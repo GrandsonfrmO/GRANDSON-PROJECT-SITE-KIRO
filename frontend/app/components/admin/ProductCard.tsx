@@ -2,29 +2,13 @@
 
 import { useState } from 'react';
 import { Product } from '../../types';
+import { getImageUrl } from '../../lib/imageOptimization';
 
 interface ProductCardProps {
   product: Product;
   onUpdate: () => void;
   onEdit?: (product: Product) => void;
 }
-
-// Helper function to get proper image URL
-const getProductImageUrl = (imageUrl: string | undefined): string => {
-  if (!imageUrl) return '';
-  
-  // If it's already a full URL (http/https), return as-is
-  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-    return imageUrl;
-  }
-  
-  // If it's a relative path, ensure it starts with /
-  if (!imageUrl.startsWith('/')) {
-    return `/${imageUrl}`;
-  }
-  
-  return imageUrl;
-};
 
 export default function ProductCard({ product, onUpdate, onEdit }: ProductCardProps) {
   const [isLoading, setIsLoading] = useState(false);
@@ -110,9 +94,10 @@ export default function ProductCard({ product, onUpdate, onEdit }: ProductCardPr
       <div className="relative aspect-square bg-neutral-100 overflow-hidden">
         {product.images && product.images[0] && !imageError ? (
           <img 
-            src={getProductImageUrl(product.images[0])} 
+            src={getImageUrl(product.images[0], 'card')} 
             alt={product.name}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+            loading="lazy"
             onError={() => setImageError(true)}
           />
         ) : (

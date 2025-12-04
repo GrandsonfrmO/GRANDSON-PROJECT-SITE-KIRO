@@ -55,6 +55,26 @@ export default function ProductImageViewer({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isFullscreen, selectedIndex, images.length]);
 
+  // Preload adjacent images for smooth navigation
+  useEffect(() => {
+    if (!images || images.length === 0) return;
+    
+    const preloadImages = [];
+    // Preload previous image
+    if (selectedIndex > 0) {
+      preloadImages.push(images[selectedIndex - 1]);
+    }
+    // Preload next image
+    if (selectedIndex < images.length - 1) {
+      preloadImages.push(images[selectedIndex + 1]);
+    }
+    
+    preloadImages.forEach(imageUrl => {
+      const img = new Image();
+      img.src = getImageUrl(imageUrl, 'detail');
+    });
+  }, [selectedIndex, images, getImageUrl]);
+
   const currentImage = images[selectedIndex];
 
   return (

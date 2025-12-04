@@ -13,9 +13,10 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [imageError, setImageError] = useState(false);
   const isMobile = useIsMobile();
 
-  // Safely get the first image with proper URL handling
+  // Safely get the first image with proper URL handling (Cloudinary URLs)
   const images = Array.isArray(product.images) ? product.images : [];
   const rawImage = images.length > 0 ? images[0] : null;
+  // Use Cloudinary optimized URL for card size
   const firstImage = rawImage ? getImageUrl(rawImage, 'card') : null;
 
   return (
