@@ -94,7 +94,7 @@ export default function ProductCard({ product, onUpdate, onEdit }: ProductCardPr
       <div className="relative aspect-square bg-neutral-100 overflow-hidden">
         {product.images && product.images[0] && !imageError ? (
           <img 
-            src={getImageUrl(product.images[0], 'card')} 
+            src={getImageUrl(product.images[0], 'thumbnail')} 
             alt={product.name}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
             loading="lazy"

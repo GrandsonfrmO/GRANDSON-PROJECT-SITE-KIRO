@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { getImageUrl, ImageSize } from '@/app/lib/imageOptimization';
 
@@ -37,6 +37,36 @@ export default function OptimizedImage({
 }: OptimizedImageProps) {
   const [imageError, setImageError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [shouldLoad, setShouldLoad] = useState(priority);
+  const imgRef = useRef<HTMLDivElement>(null);
+
+  // Intersection Observer for lazy loading
+  useEffect(() => {
+    if (priority || shouldLoad) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setShouldLoad(true);
+            observer.disconnect();
+          }
+        });
+      },
+      {
+        rootMargin: '50px', // Start loading 50px before image enters viewport
+        threshold: 0.01,
+      }
+    );
+
+    if (imgRef.current) {
+      observer.observe(imgRef.current);
+    }
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [priority, shouldLoad]);
 
   const handleImageError = () => {
     console.error('Image failed to load:', src);
@@ -88,35 +118,39 @@ export default function OptimizedImage({
 
   if (fill) {
     return (
-      <>
+      <div ref={imgRef} className="absolute inset-0">
         {isLoading && (
           <div className="absolute inset-0 bg-gradient-to-br from-neutral-200 to-neutral-300 animate-pulse" />
         )}
-        <Image
-          {...commonProps}
-          src={optimizedSrc}
-          fill
-          sizes={sizes}
-        />
-      </>
+        {shouldLoad && (
+          <Image
+            {...commonProps}
+            src={optimizedSrc}
+            fill
+            sizes={sizes}
+          />
+        )}
+      </div>
     );
   }
 
   return (
-    <>
+    <div ref={imgRef} style={{ width, height }}>
       {isLoading && width && height && (
         <div 
           className="bg-gradient-to-br from-neutral-200 to-neutral-300 animate-pulse"
           style={{ width, height }}
         />
       )}
-      <Image
-        {...commonProps}
-        src={optimizedSrc}
-        width={width || 400}
-        height={height || 400}
-        sizes={sizes}
-      />
-    </>
+      {shouldLoad && (
+        <Image
+          {...commonProps}
+          src={optimizedSrc}
+          width={width || 400}
+          height={height || 400}
+          sizes={sizes}
+        />
+      )}
+    </div>
   );
 }

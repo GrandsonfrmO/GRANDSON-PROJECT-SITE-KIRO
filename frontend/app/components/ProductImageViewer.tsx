@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import OptimizedImage from './OptimizedImage';
+import { useAdjacentImagePreload } from '@/app/hooks/useImagePreload';
 
 interface ProductImageViewerProps {
   images: string[];
@@ -27,6 +28,9 @@ export default function ProductImageViewer({
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Use the preload hook for adjacent images
+  useAdjacentImagePreload(images, selectedIndex, 'detail', 2);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!isZoomed || !imageRef.current) return;
@@ -54,26 +58,6 @@ export default function ProductImageViewer({
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isFullscreen, selectedIndex, images.length]);
-
-  // Preload adjacent images for smooth navigation
-  useEffect(() => {
-    if (!images || images.length === 0) return;
-    
-    const preloadImages = [];
-    // Preload previous image
-    if (selectedIndex > 0) {
-      preloadImages.push(images[selectedIndex - 1]);
-    }
-    // Preload next image
-    if (selectedIndex < images.length - 1) {
-      preloadImages.push(images[selectedIndex + 1]);
-    }
-    
-    preloadImages.forEach(imageUrl => {
-      const img = new Image();
-      img.src = getImageUrl(imageUrl, 'detail');
-    });
-  }, [selectedIndex, images, getImageUrl]);
 
   const currentImage = images[selectedIndex];
 

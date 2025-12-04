@@ -16,35 +16,35 @@ const IMAGE_TRANSFORMATIONS: Record<ImageSize, ImageTransformation> = {
   thumbnail: {
     width: 100,
     height: 100,
-    quality: 70,
+    quality: 60,
     format: 'auto',
     crop: 'fill',
   },
   card: {
     width: 400,
     height: 400,
-    quality: 80,
+    quality: 75,
     format: 'auto',
     crop: 'fill',
   },
   detail: {
-    width: 800,
-    height: 800,
+    width: 1200,
+    height: 1200,
     quality: 85,
     format: 'auto',
     crop: 'fit',
   },
   gallery: {
-    width: 200,
-    height: 200,
-    quality: 75,
+    width: 150,
+    height: 150,
+    quality: 70,
     format: 'auto',
     crop: 'fill',
   },
   cart: {
-    width: 120,
-    height: 120,
-    quality: 75,
+    width: 80,
+    height: 80,
+    quality: 70,
     format: 'auto',
     crop: 'fill',
   },
@@ -68,13 +68,15 @@ export function optimizeCloudinaryUrl(url: string, size: ImageSize = 'card'): st
 
   const transformation = IMAGE_TRANSFORMATIONS[size];
   
-  // Build transformation string
+  // Build transformation string with additional optimizations
   const transforms = [
     `w_${transformation.width}`,
     transformation.height ? `h_${transformation.height}` : null,
     `q_${transformation.quality}`,
     `f_${transformation.format}`,
     transformation.crop ? `c_${transformation.crop}` : null,
+    'dpr_auto', // Automatic DPR (Device Pixel Ratio) for retina displays
+    'fl_progressive', // Progressive loading for better perceived performance
   ].filter(Boolean).join(',');
 
   // Insert transformations into Cloudinary URL
@@ -164,4 +166,69 @@ export function getImageUrl(imagePath: string, size: ImageSize = 'card'): string
     // Assume it's a filename in uploads directory
     return `${apiUrl}/uploads/${imagePath}`;
   }
+}
+
+/**
+ * Preload images for better performance
+ * Useful for preloading adjacent images in galleries
+ */
+export function preloadImages(imagePaths: string[], size: ImageSize = 'detail'): void {
+  if (typeof window === 'undefined') return;
+
+  imagePaths.forEach(imagePath => {
+    if (!imagePath) return;
+    
+    const optimizedUrl = getImageUrl(imagePath, size);
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'image';
+    link.href = optimizedUrl;
+    document.head.appendChild(link);
+  });
+}
+
+/**
+ * Preload a single image
+ */
+export function preloadImage(imagePath: string, size: ImageSize = 'detail'): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (!imagePath) {
+      resolve();
+      return;
+    }
+
+    const img = new Image();
+    const optimizedUrl = getImageUrl(imagePath, size);
+    
+    img.onload = () => resolve();
+    img.onerror = () => reject(new Error(`Failed to preload image: ${optimizedUrl}`));
+    img.src = optimizedUrl;
+  });
+}
+
+/**
+ * Generate responsive srcset for Cloudinary images
+ * Useful for serving different image sizes based on viewport
+ */
+export function generateResponsiveSrcSet(imagePath: string, sizes: ImageSize[]): string {
+  if (!imagePath || !imagePath.includes('cloudinary.com')) {
+    return '';
+  }
+
+  return sizes
+    .map(size => {
+      const transformation = IMAGE_TRANSFORMATIONS[size];
+      const url = getImageUrl(imagePath, size);
+      return `${url} ${transformation.width}w`;
+    })
+    .join(', ');
+}
+
+/**
+ * Get optimal image size based on viewport width
+ */
+export function getOptimalImageSize(viewportWidth: number): ImageSize {
+  if (viewportWidth < 640) return 'thumbnail'; // Mobile
+  if (viewportWidth < 1024) return 'card'; // Tablet
+  return 'detail'; // Desktop
 }
