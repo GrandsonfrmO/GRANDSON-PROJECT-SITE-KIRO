@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { validateProduct } from '@/app/lib/validation';
+import { validateAdminRequest, logAuthAttempt, getValidatedUser } from '@/app/lib/jwtValidation';
 
 // Créer un client Supabase avec la clé service pour les opérations admin
 const getSupabaseAdmin = () => {
@@ -77,21 +78,15 @@ export async function GET(
   try {
     const { id } = await params;
     
-    // Get admin token from headers
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    
-    if (!token) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: 'UNAUTHORIZED',
-            message: 'Token d\'authentification requis'
-          }
-        },
-        { status: 401 }
-      );
+    // Validate admin authentication
+    const authError = validateAdminRequest(request);
+    if (authError) {
+      logAuthAttempt(`GET /api/admin/products/${id}`, false, 'Authentication failed');
+      return authError;
     }
+    
+    const user = getValidatedUser(request);
+    logAuthAttempt(`GET /api/admin/products/${id}`, true, undefined, user?.id);
 
     const supabase = getSupabaseAdmin();
 
@@ -143,27 +138,23 @@ export async function PUT(
   
   try {
     const { id } = await params;
+    
+    // Validate admin authentication
+    const authError = validateAdminRequest(request);
+    if (authError) {
+      console.error(`[${requestId}] ❌ Unauthorized: Authentication failed`);
+      logAuthAttempt(`PUT /api/admin/products/${id}`, false, 'Authentication failed');
+      return authError;
+    }
+    
+    const user = getValidatedUser(request);
+    logAuthAttempt(`PUT /api/admin/products/${id}`, true, undefined, user?.id);
+    
     const body = await request.json();
     
-    console.log(`[${requestId}] 📝 Product update started for ID: ${id}`);
-    
-    // Get admin token from headers
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    
-    if (!token) {
-      console.error(`[${requestId}] ❌ Unauthorized: No token provided`);
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: 'UNAUTHORIZED',
-            message: 'Authentication token required. Please log in again.',
-            timestamp: new Date().toISOString()
-          }
-        },
-        { status: 401 }
-      );
-    }
+    console.log(`[${requestId}] 📝 Product update started for ID: ${id}`, {
+      userId: user?.id
+    });
     
     const supabase = getSupabaseAdmin();
 
@@ -376,23 +367,19 @@ export async function DELETE(
   try {
     const { id } = await params;
     
-    // Get admin token from headers
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    
-    if (!token) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: 'UNAUTHORIZED',
-            message: 'Token d\'authentification requis'
-          }
-        },
-        { status: 401 }
-      );
+    // Validate admin authentication
+    const authError = validateAdminRequest(request);
+    if (authError) {
+      logAuthAttempt(`DELETE /api/admin/products/${id}`, false, 'Authentication failed');
+      return authError;
     }
+    
+    const user = getValidatedUser(request);
+    logAuthAttempt(`DELETE /api/admin/products/${id}`, true, undefined, user?.id);
 
-    console.log(`📦 Deleting product ${id}...`);
+    console.log(`📦 Deleting product ${id}...`, {
+      userId: user?.id
+    });
     
     const supabase = getSupabaseAdmin();
 

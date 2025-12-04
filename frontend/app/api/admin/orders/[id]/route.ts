@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import * as jwt from 'jsonwebtoken';
+import { validateAdminRequest, logAuthAttempt, getValidatedUser } from '@/app/lib/jwtValidation';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -18,32 +18,21 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
+    
+    // Validate admin authentication
+    const authError = validateAdminRequest(request);
+    if (authError) {
+      logAuthAttempt(`PUT /api/admin/orders/${id}`, false, 'Authentication failed');
+      return authError;
+    }
+    
+    const user = getValidatedUser(request);
+    logAuthAttempt(`PUT /api/admin/orders/${id}`, true, undefined, user?.id);
+    
     const body = await request.json();
     const { status } = body;
     
-    // Get admin token from headers
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    
-    if (!token) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: 'UNAUTHORIZED',
-            message: 'Token d\'authentification requis'
-          }
-        },
-        { status: 401 }
-      );
-    }
-
-    // Verify admin token
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-this-in-production');
-      if (!decoded) {
-        throw new Error('Invalid token');
-      }
-    } catch (error) {
+    if (!status) {
       return NextResponse.json(
         {
           success: false,
@@ -143,42 +132,19 @@ export async function DELETE(
   try {
     const { id } = await params;
     
-    // Get admin token from headers
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    // Validate admin authentication
+    const authError = validateAdminRequest(request);
+    if (authError) {
+      logAuthAttempt(`DELETE /api/admin/orders/${id}`, false, 'Authentication failed');
+      return authError;
+    }
     
-    if (!token) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: 'UNAUTHORIZED',
-            message: 'Token d\'authentification requis'
-          }
-        },
-        { status: 401 }
-      );
-    }
+    const user = getValidatedUser(request);
+    logAuthAttempt(`DELETE /api/admin/orders/${id}`, true, undefined, user?.id);
 
-    // Verify admin token
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-this-in-production');
-      if (!decoded) {
-        throw new Error('Invalid token');
-      }
-    } catch (error) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: 'UNAUTHORIZED',
-            message: 'Token invalide'
-          }
-        },
-        { status: 401 }
-      );
-    }
-
-    console.log(`🗑️ Frontend API: Deleting order ${id} from Supabase...`);
+    console.log(`🗑️ Frontend API: Deleting order ${id} from Supabase...`, {
+      userId: user?.id
+    });
     
     // Delete order directly from Supabase
     const { error } = await supabase

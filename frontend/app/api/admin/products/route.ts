@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { validateAdminRequest, logAuthAttempt, getValidatedUser } from '@/app/lib/jwtValidation';
 
 // Créer un client Supabase avec la clé service pour les opérations admin
 const getSupabaseAdmin = () => {
@@ -74,21 +75,15 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
 
-    // Get admin token from headers
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    
-    if (!token) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: 'UNAUTHORIZED',
-            message: 'Token d\'authentification requis'
-          }
-        },
-        { status: 401 }
-      );
+    // Validate admin authentication
+    const authError = validateAdminRequest(request);
+    if (authError) {
+      logAuthAttempt('GET /api/admin/products', false, 'Authentication failed');
+      return authError;
     }
+    
+    const user = getValidatedUser(request);
+    logAuthAttempt('GET /api/admin/products', true, undefined, user?.id);
 
     const supabase = getSupabaseAdmin();
 
@@ -140,6 +135,17 @@ export async function POST(request: NextRequest) {
   const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(7)}`;
   
   try {
+    // Validate admin authentication first
+    const authError = validateAdminRequest(request);
+    if (authError) {
+      console.error(`[${requestId}] ❌ Unauthorized: Authentication failed`);
+      logAuthAttempt('POST /api/admin/products', false, 'Authentication failed');
+      return authError;
+    }
+    
+    const user = getValidatedUser(request);
+    logAuthAttempt('POST /api/admin/products', true, undefined, user?.id);
+    
     const body = await request.json();
     
     console.log(`[${requestId}] 📦 Product creation started:`, {
@@ -147,26 +153,9 @@ export async function POST(request: NextRequest) {
       category: body.category,
       price: body.price,
       stock: body.stock,
-      hasImages: Array.isArray(body.images) && body.images.length > 0
+      hasImages: Array.isArray(body.images) && body.images.length > 0,
+      userId: user?.id
     });
-    
-    // Get admin token from headers
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    
-    if (!token) {
-      console.error(`[${requestId}] ❌ Unauthorized: No token provided`);
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: 'UNAUTHORIZED',
-            message: 'Authentication token required. Please log in again.',
-            timestamp: new Date().toISOString()
-          }
-        },
-        { status: 401 }
-      );
-    }
 
     // Comprehensive validation
     const { name, price, category, stock, description, sizes, images, colors, is_active } = body;
