@@ -137,31 +137,36 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now();
+  const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+  
   try {
     const { id } = await params;
     const body = await request.json();
+    
+    console.log(`[${requestId}] 📝 Product update started for ID: ${id}`);
     
     // Get admin token from headers
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     
     if (!token) {
+      console.error(`[${requestId}] ❌ Unauthorized: No token provided`);
       return NextResponse.json(
         {
           success: false,
           error: {
             code: 'UNAUTHORIZED',
-            message: 'Token d\'authentification requis'
+            message: 'Authentication token required. Please log in again.',
+            timestamp: new Date().toISOString()
           }
         },
         { status: 401 }
       );
     }
-
-    console.log(`📦 Updating product ${id}...`);
     
     const supabase = getSupabaseAdmin();
 
-    // Check if product exists
+    // Load existing product
     const { data: existingProduct, error: fetchError } = await supabase
       .from('products')
       .select('*')
@@ -169,40 +174,90 @@ export async function PUT(
       .single();
 
     if (fetchError || !existingProduct) {
+      console.error(`[${requestId}] ❌ Product not found:`, id);
       return NextResponse.json(
         {
           success: false,
           error: {
             code: 'NOT_FOUND',
-            message: 'Produit non trouvé'
+            message: 'Product not found. It may have been deleted.',
+            timestamp: new Date().toISOString()
           }
         },
         { status: 404 }
       );
     }
 
-    // Build update data
+    console.log(`[${requestId}] 📦 Existing product loaded:`, {
+      name: existingProduct.name,
+      price: existingProduct.price,
+      stock: existingProduct.stock
+    });
+
+    // Build update data with validation
     const { name, description, price, category, sizes, images, colors, stock, is_active, isActive } = body;
     
     const updateData: any = {};
-    if (name !== undefined) updateData.name = name;
-    if (description !== undefined) updateData.description = description;
-    if (price !== undefined) {
-      updateData.price = parseFloat(price);
-      updateData.base_price = parseFloat(price);
+    const changes: string[] = [];
+    
+    if (name !== undefined && name !== existingProduct.name) {
+      updateData.name = name.trim();
+      changes.push(`name: "${existingProduct.name}" → "${name}"`);
     }
-    if (category !== undefined) updateData.category = category;
-    if (sizes !== undefined) updateData.sizes = Array.isArray(sizes) ? sizes : [sizes];
-    if (images !== undefined) updateData.images = Array.isArray(images) ? images : (images ? [images] : []);
-    if (colors !== undefined) updateData.colors = colors && colors.length > 0 ? (Array.isArray(colors) ? colors : [colors]) : null;
-    if (stock !== undefined) {
-      updateData.stock = parseInt(stock);
-      updateData.total_stock = parseInt(stock);
+    if (description !== undefined && description !== existingProduct.description) {
+      updateData.description = description?.trim() || '';
+      changes.push(`description updated`);
     }
-    if (is_active !== undefined) updateData.is_active = is_active;
-    if (isActive !== undefined) updateData.is_active = isActive;
+    if (price !== undefined && parseFloat(price) !== existingProduct.price) {
+      const priceValue = parseFloat(price);
+      updateData.price = priceValue;
+      updateData.base_price = priceValue;
+      changes.push(`price: ${existingProduct.price} → ${priceValue}`);
+    }
+    if (category !== undefined && category !== existingProduct.category) {
+      updateData.category = category.trim();
+      changes.push(`category: "${existingProduct.category}" → "${category}"`);
+    }
+    if (sizes !== undefined) {
+      updateData.sizes = Array.isArray(sizes) ? sizes : [sizes];
+      changes.push(`sizes updated`);
+    }
+    if (images !== undefined) {
+      updateData.images = Array.isArray(images) ? images : (images ? [images] : []);
+      changes.push(`images updated (${updateData.images.length} images)`);
+    }
+    if (colors !== undefined) {
+      updateData.colors = colors && colors.length > 0 ? (Array.isArray(colors) ? colors : [colors]) : null;
+      changes.push(`colors updated`);
+    }
+    if (stock !== undefined && parseInt(stock) !== existingProduct.stock) {
+      const stockValue = parseInt(stock);
+      updateData.stock = stockValue;
+      updateData.total_stock = stockValue;
+      changes.push(`stock: ${existingProduct.stock} → ${stockValue}`);
+    }
+    
+    const activeValue = is_active !== undefined ? is_active : isActive;
+    if (activeValue !== undefined && activeValue !== existingProduct.is_active) {
+      updateData.is_active = activeValue;
+      changes.push(`is_active: ${existingProduct.is_active} → ${activeValue}`);
+    }
 
-    // Update product
+    // Check if there are any changes
+    if (Object.keys(updateData).length === 0) {
+      console.log(`[${requestId}] ℹ️ No changes detected`);
+      return NextResponse.json({
+        success: true,
+        data: { 
+          product: transformProduct(existingProduct),
+          message: 'No changes detected'
+        }
+      });
+    }
+
+    console.log(`[${requestId}] 📝 Applying changes:`, changes);
+
+    // Update product in database
     const { data: product, error } = await supabase
       .from('products')
       .update(updateData)
@@ -211,33 +266,58 @@ export async function PUT(
       .single();
 
     if (error) {
-      console.error('❌ Supabase update error:', error);
+      console.error(`[${requestId}] ❌ Supabase update error:`, {
+        code: error.code,
+        message: error.message,
+        details: error.details
+      });
+      
       return NextResponse.json(
         {
           success: false,
           error: {
             code: 'DATABASE_ERROR',
-            message: error.message
+            message: `Failed to update product: ${error.message}`,
+            details: error.details,
+            timestamp: new Date().toISOString()
           }
         },
         { status: 500 }
       );
     }
 
-    console.log('✅ Product updated successfully:', product.id);
+    const duration = Date.now() - startTime;
+    console.log(`[${requestId}] ✅ Product updated successfully in ${duration}ms:`, {
+      id: product.id,
+      changes: changes.length,
+      changesList: changes
+    });
 
     return NextResponse.json({
       success: true,
-      data: { product: transformProduct(product) }
+      data: { 
+        product: transformProduct(product),
+        message: 'Product updated successfully',
+        changes: changes
+      }
     });
+    
   } catch (error) {
-    console.error('❌ Update product API error:', error);
+    const duration = Date.now() - startTime;
+    console.error(`[${requestId}] ❌ Update product error after ${duration}ms:`, error);
+    
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    console.error(`[${requestId}] Stack trace:`, errorStack);
+    
     return NextResponse.json(
       {
         success: false,
         error: {
           code: 'INTERNAL_ERROR',
-          message: 'Erreur lors de la mise à jour du produit'
+          message: `Failed to update product: ${errorMessage}`,
+          timestamp: new Date().toISOString()
         }
       },
       { status: 500 }

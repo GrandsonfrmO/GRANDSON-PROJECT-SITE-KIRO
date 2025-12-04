@@ -136,37 +136,65 @@ export async function GET(request: NextRequest) {
 
 // POST /api/admin/products - Create new product
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+  const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+  
   try {
     const body = await request.json();
     
-    console.log('📦 Création produit - données reçues:', JSON.stringify(body, null, 2));
+    console.log(`[${requestId}] 📦 Product creation started:`, {
+      name: body.name,
+      category: body.category,
+      price: body.price,
+      stock: body.stock,
+      hasImages: Array.isArray(body.images) && body.images.length > 0
+    });
     
     // Get admin token from headers
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     
     if (!token) {
+      console.error(`[${requestId}] ❌ Unauthorized: No token provided`);
       return NextResponse.json(
         {
           success: false,
           error: {
             code: 'UNAUTHORIZED',
-            message: 'Token d\'authentification requis'
+            message: 'Authentication token required. Please log in again.',
+            timestamp: new Date().toISOString()
           }
         },
         { status: 401 }
       );
     }
 
-    // Validation
+    // Comprehensive validation
     const { name, price, category, stock, description, sizes, images, colors, is_active } = body;
+    const validationErrors: Record<string, string> = {};
 
-    if (!name || !price || !category || stock === undefined) {
+    if (!name || name.trim() === '') {
+      validationErrors.name = 'Product name is required';
+    }
+    if (price === undefined || price === null || parseFloat(price) <= 0) {
+      validationErrors.price = 'Product price must be a positive number';
+    }
+    if (!category || category.trim() === '') {
+      validationErrors.category = 'Product category is required';
+    }
+    if (stock === undefined || stock === null || parseInt(stock) < 0) {
+      validationErrors.stock = 'Product stock must be a non-negative number';
+    }
+
+    if (Object.keys(validationErrors).length > 0) {
+      console.error(`[${requestId}] ❌ Validation failed:`, validationErrors);
       return NextResponse.json(
         {
           success: false,
           error: {
             code: 'VALIDATION_ERROR',
-            message: 'Nom, prix, catégorie et stock sont requis'
+            message: 'Validation failed. Please check all required fields.',
+            details: validationErrors,
+            timestamp: new Date().toISOString()
           }
         },
         { status: 400 }
@@ -175,10 +203,9 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabaseAdmin();
 
-    // Récupérer un seller_id existant depuis la table users ou products
+    // Get seller_id from existing product or users table
     let sellerId: string | null = null;
     
-    // D'abord essayer de récupérer depuis un produit existant
     const { data: existingProduct } = await supabase
       .from('products')
       .select('seller_id')
@@ -189,7 +216,6 @@ export async function POST(request: NextRequest) {
     sellerId = existingProduct?.seller_id;
     
     if (!sellerId) {
-      // Essayer de récupérer depuis la table users
       const { data: userData } = await supabase
         .from('users')
         .select('id')
@@ -198,21 +224,23 @@ export async function POST(request: NextRequest) {
       sellerId = userData?.id;
     }
     
-    // Si toujours pas de seller_id, on laisse NULL (la table doit l'accepter)
-    console.log('📝 seller_id utilisé:', sellerId || 'NULL');
+    console.log(`[${requestId}] 📝 Using seller_id:`, sellerId || 'NULL');
 
-    // Create product directly in Supabase
+    // Prepare product data
     const priceValue = parseFloat(price);
     const stockValue = parseInt(stock);
     
+    // Ensure images are properly formatted (Cloudinary URLs)
+    const imageUrls = Array.isArray(images) ? images : (images ? [images] : []);
+    
     const productData = {
       name: name.trim(),
-      description: description || '',
+      description: description?.trim() || '',
       base_price: priceValue,
       price: priceValue,
-      images: Array.isArray(images) ? images : (images ? [images] : []),
-      category: category,
-      attributes: JSON.stringify({ name: name.trim(), description: description || '' }),
+      images: imageUrls,
+      category: category.trim(),
+      attributes: JSON.stringify({ name: name.trim(), description: description?.trim() || '' }),
       total_stock: stockValue,
       sizes: Array.isArray(sizes) ? sizes : (sizes ? [sizes] : ['Unique']),
       colors: colors && colors.length > 0 ? (Array.isArray(colors) ? colors : [colors]) : null,
@@ -221,7 +249,15 @@ export async function POST(request: NextRequest) {
       seller_id: sellerId
     };
     
-    console.log('📦 Données à insérer:', JSON.stringify(productData, null, 2));
+    console.log(`[${requestId}] 📦 Inserting product data:`, {
+      name: productData.name,
+      price: productData.price,
+      stock: productData.stock,
+      category: productData.category,
+      imageCount: productData.images.length,
+      sizes: productData.sizes,
+      colors: productData.colors
+    });
 
     const { data: product, error } = await supabase
       .from('products')
@@ -230,36 +266,59 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('❌ Supabase create error:', error);
+      console.error(`[${requestId}] ❌ Supabase insert error:`, {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      });
+      
       return NextResponse.json(
         {
           success: false,
           error: {
             code: 'DATABASE_ERROR',
-            message: error.message
+            message: `Failed to create product: ${error.message}`,
+            details: error.details,
+            timestamp: new Date().toISOString()
           }
         },
         { status: 500 }
       );
     }
 
-    console.log('✅ Produit créé:', product.id);
+    const duration = Date.now() - startTime;
+    console.log(`[${requestId}] ✅ Product created successfully in ${duration}ms:`, {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      stock: product.stock
+    });
 
     return NextResponse.json({
       success: true,
-      data: { product: transformProduct(product) }
+      data: { 
+        product: transformProduct(product),
+        message: 'Product created successfully'
+      }
     }, { status: 201 });
 
   } catch (error: unknown) {
-    console.error('❌ Create product API error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+    const duration = Date.now() - startTime;
+    console.error(`[${requestId}] ❌ Create product error after ${duration}ms:`, error);
+    
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    console.error(`[${requestId}] Stack trace:`, errorStack);
     
     return NextResponse.json(
       {
         success: false,
         error: {
           code: 'INTERNAL_ERROR',
-          message: `Erreur lors de la création du produit: ${errorMessage}`
+          message: `Failed to create product: ${errorMessage}`,
+          timestamp: new Date().toISOString()
         }
       },
       { status: 500 }
