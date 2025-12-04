@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     // Validate file type and size
     const validation = validateImageFile(file);
     if (!validation.isValid) {
-      const errorMessage = Object.values(validation.errors).join(', ');
+      const errorMessage = Object.values(validation.errors || {}).join(', ');
       console.error('[Upload] File validation failed:', errorMessage);
       return NextResponse.json(
         { 
