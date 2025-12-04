@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { validateProduct } from '@/app/lib/validation';
 
 // Créer un client Supabase avec la clé service pour les opérations admin
 const getSupabaseAdmin = () => {
@@ -166,7 +167,7 @@ export async function PUT(
     
     const supabase = getSupabaseAdmin();
 
-    // Load existing product
+    // Load existing product from Supabase
     const { data: existingProduct, error: fetchError } = await supabase
       .from('products')
       .select('*')
@@ -191,47 +192,86 @@ export async function PUT(
     console.log(`[${requestId}] 📦 Existing product loaded:`, {
       name: existingProduct.name,
       price: existingProduct.price,
-      stock: existingProduct.stock
+      stock: existingProduct.stock,
+      category: existingProduct.category
     });
 
-    // Build update data with validation
+    // Validate modifications using validation utility
+    const validationResult = validateProduct(body, true); // true = update mode
+    
+    if (!validationResult.isValid) {
+      console.error(`[${requestId}] ❌ Validation failed:`, validationResult.errors);
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Validation failed. Please check all fields.',
+            details: validationResult.errors,
+            timestamp: new Date().toISOString()
+          }
+        },
+        { status: 400 }
+      );
+    }
+
+    // Build update data with proper handling
     const { name, description, price, category, sizes, images, colors, stock, is_active, isActive } = body;
     
     const updateData: any = {};
     const changes: string[] = [];
+    const oldValues: Record<string, any> = {};
     
     if (name !== undefined && name !== existingProduct.name) {
+      oldValues.name = existingProduct.name;
       updateData.name = name.trim();
       changes.push(`name: "${existingProduct.name}" → "${name}"`);
     }
     if (description !== undefined && description !== existingProduct.description) {
+      oldValues.description = existingProduct.description;
       updateData.description = description?.trim() || '';
       changes.push(`description updated`);
     }
     if (price !== undefined && parseFloat(price) !== existingProduct.price) {
       const priceValue = parseFloat(price);
+      oldValues.price = existingProduct.price;
       updateData.price = priceValue;
       updateData.base_price = priceValue;
       changes.push(`price: ${existingProduct.price} → ${priceValue}`);
     }
     if (category !== undefined && category !== existingProduct.category) {
+      oldValues.category = existingProduct.category;
       updateData.category = category.trim();
       changes.push(`category: "${existingProduct.category}" → "${category}"`);
     }
     if (sizes !== undefined) {
+      oldValues.sizes = existingProduct.sizes;
       updateData.sizes = Array.isArray(sizes) ? sizes : [sizes];
       changes.push(`sizes updated`);
     }
+    
+    // Handle image updates properly
     if (images !== undefined) {
-      updateData.images = Array.isArray(images) ? images : (images ? [images] : []);
-      changes.push(`images updated (${updateData.images.length} images)`);
+      oldValues.images = existingProduct.images;
+      const imageArray = Array.isArray(images) ? images : (images ? [images] : []);
+      updateData.images = imageArray;
+      changes.push(`images updated (${imageArray.length} images)`);
+      
+      console.log(`[${requestId}] 🖼️ Image update:`, {
+        oldCount: Array.isArray(existingProduct.images) ? existingProduct.images.length : 0,
+        newCount: imageArray.length,
+        newImages: imageArray
+      });
     }
+    
     if (colors !== undefined) {
+      oldValues.colors = existingProduct.colors;
       updateData.colors = colors && colors.length > 0 ? (Array.isArray(colors) ? colors : [colors]) : null;
       changes.push(`colors updated`);
     }
     if (stock !== undefined && parseInt(stock) !== existingProduct.stock) {
       const stockValue = parseInt(stock);
+      oldValues.stock = existingProduct.stock;
       updateData.stock = stockValue;
       updateData.total_stock = stockValue;
       changes.push(`stock: ${existingProduct.stock} → ${stockValue}`);
@@ -239,6 +279,7 @@ export async function PUT(
     
     const activeValue = is_active !== undefined ? is_active : isActive;
     if (activeValue !== undefined && activeValue !== existingProduct.is_active) {
+      oldValues.is_active = existingProduct.is_active;
       updateData.is_active = activeValue;
       changes.push(`is_active: ${existingProduct.is_active} → ${activeValue}`);
     }
@@ -255,7 +296,8 @@ export async function PUT(
       });
     }
 
-    console.log(`[${requestId}] 📝 Applying changes:`, changes);
+    console.log(`[${requestId}] 📝 Applying ${changes.length} changes:`, changes);
+    console.log(`[${requestId}] 📝 Old values:`, oldValues);
 
     // Update product in database
     const { data: product, error } = await supabase
@@ -269,7 +311,8 @@ export async function PUT(
       console.error(`[${requestId}] ❌ Supabase update error:`, {
         code: error.code,
         message: error.message,
-        details: error.details
+        details: error.details,
+        hint: error.hint
       });
       
       return NextResponse.json(
@@ -289,6 +332,7 @@ export async function PUT(
     const duration = Date.now() - startTime;
     console.log(`[${requestId}] ✅ Product updated successfully in ${duration}ms:`, {
       id: product.id,
+      name: product.name,
       changes: changes.length,
       changesList: changes
     });

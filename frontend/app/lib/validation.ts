@@ -1,158 +1,181 @@
-/**
- * Validation utilities for file uploads and product data
- */
+// Product validation utilities
 
-// File validation constants
-export const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
-export const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-export const MAX_FILE_SIZE_MB = 5;
-
-export interface FileValidationResult {
-  valid: boolean;
-  error?: string;
+export interface ValidationError {
+  field: string;
+  message: string;
 }
 
-/**
- * Validate image file format and size
- * @param file - File to validate
- * @returns Validation result
- */
-export function validateImageFile(file: File): FileValidationResult {
-  // Check if file exists
-  if (!file) {
-    return {
-      valid: false,
-      error: 'No file provided'
-    };
-  }
-
-  // Check file type
-  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-    return {
-      valid: false,
-      error: `Invalid file type. Allowed types: ${ALLOWED_IMAGE_TYPES.join(', ')}`
-    };
-  }
-
-  // Check file size
-  if (file.size > MAX_FILE_SIZE) {
-    return {
-      valid: false,
-      error: `File size exceeds ${MAX_FILE_SIZE_MB}MB limit. Current size: ${(file.size / 1024 / 1024).toFixed(2)}MB`
-    };
-  }
-
-  return { valid: true };
-}
-
-/**
- * Validate multiple image files
- * @param files - Files to validate
- * @returns Validation result with details for each file
- */
-export function validateImageFiles(files: File[]): { valid: boolean; errors: string[] } {
-  const errors: string[] = [];
-
-  if (!files || files.length === 0) {
-    return {
-      valid: false,
-      errors: ['No files provided']
-    };
-  }
-
-  files.forEach((file, index) => {
-    const result = validateImageFile(file);
-    if (!result.valid) {
-      errors.push(`File ${index + 1}: ${result.error}`);
-    }
-  });
-
-  return {
-    valid: errors.length === 0,
-    errors
-  };
-}
-
-export interface ProductValidationResult {
-  valid: boolean;
+export interface ValidationResult {
+  isValid: boolean;
   errors: Record<string, string>;
 }
 
+export interface ProductData {
+  name?: string;
+  price?: number | string;
+  category?: string;
+  stock?: number | string;
+  description?: string;
+  sizes?: string[];
+  colors?: string[];
+  images?: string[];
+  is_active?: boolean;
+}
+
 /**
- * Validate product data
- * @param product - Product data to validate
- * @returns Validation result with field-specific errors
+ * Validates product data for creation or update
+ * @param data Product data to validate
+ * @param isUpdate Whether this is an update operation (makes all fields optional)
+ * @returns ValidationResult with isValid flag and errors object
  */
-export function validateProduct(product: any): ProductValidationResult {
+export function validateProduct(data: ProductData, isUpdate: boolean = false): ValidationResult {
   const errors: Record<string, string> = {};
 
-  // Required fields
-  if (!product.name || product.name.trim() === '') {
-    errors.name = 'Product name is required';
-  }
-
-  if (product.price === undefined || product.price === null) {
-    errors.price = 'Product price is required';
-  } else if (typeof product.price !== 'number' || product.price <= 0) {
-    errors.price = 'Product price must be a positive number';
-  }
-
-  if (!product.category || product.category.trim() === '') {
-    errors.category = 'Product category is required';
-  }
-
-  if (product.stock === undefined || product.stock === null) {
-    errors.stock = 'Product stock is required';
-  } else if (typeof product.stock !== 'number' || product.stock < 0) {
-    errors.stock = 'Product stock must be a non-negative number';
-  }
-
-  // Optional but validated if present
-  if (product.description && typeof product.description !== 'string') {
-    errors.description = 'Product description must be a string';
-  }
-
-  if (product.sizes) {
-    if (!Array.isArray(product.sizes)) {
-      errors.sizes = 'Product sizes must be an array';
-    } else if (product.sizes.length === 0) {
-      errors.sizes = 'At least one size is required';
+  // Name validation
+  if (!isUpdate || data.name !== undefined) {
+    if (!data.name || typeof data.name !== 'string' || data.name.trim() === '') {
+      errors.name = 'Product name is required and must be a non-empty string';
+    } else if (data.name.trim().length < 2) {
+      errors.name = 'Product name must be at least 2 characters long';
+    } else if (data.name.trim().length > 200) {
+      errors.name = 'Product name must not exceed 200 characters';
     }
   }
 
-  if (product.colors && !Array.isArray(product.colors)) {
-    errors.colors = 'Product colors must be an array';
+  // Price validation
+  if (!isUpdate || data.price !== undefined) {
+    const priceValue = typeof data.price === 'string' ? parseFloat(data.price) : data.price;
+    
+    if (priceValue === undefined || priceValue === null) {
+      errors.price = 'Product price is required';
+    } else if (isNaN(priceValue)) {
+      errors.price = 'Product price must be a valid number';
+    } else if (priceValue <= 0) {
+      errors.price = 'Product price must be greater than 0';
+    } else if (priceValue > 1000000) {
+      errors.price = 'Product price must not exceed 1,000,000';
+    }
   }
 
-  if (product.images && !Array.isArray(product.images)) {
-    errors.images = 'Product images must be an array';
+  // Category validation
+  if (!isUpdate || data.category !== undefined) {
+    if (!data.category || typeof data.category !== 'string' || data.category.trim() === '') {
+      errors.category = 'Product category is required and must be a non-empty string';
+    } else if (data.category.trim().length < 2) {
+      errors.category = 'Product category must be at least 2 characters long';
+    } else if (data.category.trim().length > 100) {
+      errors.category = 'Product category must not exceed 100 characters';
+    }
+  }
+
+  // Stock validation
+  if (!isUpdate || data.stock !== undefined) {
+    const stockValue = typeof data.stock === 'string' ? parseInt(data.stock) : data.stock;
+    
+    if (stockValue === undefined || stockValue === null) {
+      errors.stock = 'Product stock is required';
+    } else if (isNaN(stockValue)) {
+      errors.stock = 'Product stock must be a valid integer';
+    } else if (stockValue < 0) {
+      errors.stock = 'Product stock must be a non-negative number (0 or greater)';
+    } else if (stockValue > 1000000) {
+      errors.stock = 'Product stock must not exceed 1,000,000';
+    } else if (!Number.isInteger(stockValue)) {
+      errors.stock = 'Product stock must be a whole number';
+    }
+  }
+
+  // Description validation (optional field)
+  if (data.description !== undefined && data.description !== null) {
+    if (typeof data.description !== 'string') {
+      errors.description = 'Product description must be a string';
+    } else if (data.description.length > 5000) {
+      errors.description = 'Product description must not exceed 5000 characters';
+    }
+  }
+
+  // Sizes validation (optional field)
+  if (data.sizes !== undefined && data.sizes !== null) {
+    if (!Array.isArray(data.sizes)) {
+      errors.sizes = 'Product sizes must be an array';
+    } else if (data.sizes.length === 0) {
+      errors.sizes = 'Product sizes array must not be empty';
+    } else if (!data.sizes.every(size => typeof size === 'string')) {
+      errors.sizes = 'All product sizes must be strings';
+    }
+  }
+
+  // Colors validation (optional field)
+  if (data.colors !== undefined && data.colors !== null) {
+    if (!Array.isArray(data.colors)) {
+      errors.colors = 'Product colors must be an array';
+    } else if (!data.colors.every(color => typeof color === 'string')) {
+      errors.colors = 'All product colors must be strings';
+    }
+  }
+
+  // Images validation (optional field)
+  if (data.images !== undefined && data.images !== null) {
+    if (!Array.isArray(data.images)) {
+      errors.images = 'Product images must be an array';
+    } else if (!data.images.every(image => typeof image === 'string')) {
+      errors.images = 'All product images must be strings (URLs)';
+    } else {
+      // Validate URL format for each image
+      const urlPattern = /^https?:\/\/.+/;
+      const invalidImages = data.images.filter(img => !urlPattern.test(img));
+      if (invalidImages.length > 0) {
+        errors.images = 'All product images must be valid URLs starting with http:// or https://';
+      }
+    }
+  }
+
+  // is_active validation (optional field)
+  if (data.is_active !== undefined && data.is_active !== null) {
+    if (typeof data.is_active !== 'boolean') {
+      errors.is_active = 'Product is_active must be a boolean value';
+    }
   }
 
   return {
-    valid: Object.keys(errors).length === 0,
+    isValid: Object.keys(errors).length === 0,
     errors
   };
 }
 
 /**
- * Sanitize product data for database insertion
- * @param product - Raw product data
- * @returns Sanitized product data
+ * Validates file upload for product images
+ * @param file File to validate
+ * @returns ValidationResult with isValid flag and errors object
  */
-export function sanitizeProductData(product: any) {
+export function validateImageFile(file: File): ValidationResult {
+  const errors: Record<string, string> = {};
+
+  // Check file exists
+  if (!file) {
+    errors.file = 'No file provided';
+    return { isValid: false, errors };
+  }
+
+  // Check file type
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+  if (!allowedTypes.includes(file.type)) {
+    errors.type = `Invalid file type. Allowed types: ${allowedTypes.join(', ')}`;
+  }
+
+  // Check file size (max 5MB)
+  const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+  if (file.size > maxSize) {
+    errors.size = `File size exceeds maximum allowed size of 5MB. Current size: ${(file.size / 1024 / 1024).toFixed(2)}MB`;
+  }
+
+  // Check file name
+  if (file.name.length > 255) {
+    errors.name = 'File name is too long (max 255 characters)';
+  }
+
   return {
-    name: product.name?.trim() || '',
-    description: product.description?.trim() || '',
-    price: parseFloat(product.price) || 0,
-    base_price: parseFloat(product.base_price || product.price) || 0,
-    category: product.category?.trim() || '',
-    stock: parseInt(product.stock) || 0,
-    total_stock: parseInt(product.total_stock || product.stock) || 0,
-    sizes: Array.isArray(product.sizes) ? product.sizes : ['Unique'],
-    colors: Array.isArray(product.colors) ? product.colors : null,
-    images: Array.isArray(product.images) ? product.images : [],
-    attributes: product.attributes || {},
-    is_active: product.is_active !== undefined ? Boolean(product.is_active) : true,
-    seller_id: product.seller_id || null
+    isValid: Object.keys(errors).length === 0,
+    errors
   };
 }
