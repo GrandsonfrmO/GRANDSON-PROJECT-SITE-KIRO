@@ -36,14 +36,15 @@ export async function POST(request: NextRequest) {
 
     // Validate file type and size
     const validation = validateImageFile(file);
-    if (!validation.valid) {
-      console.error('[Upload] File validation failed:', validation.error);
+    if (!validation.isValid) {
+      const errorMessage = Object.values(validation.errors).join(', ');
+      console.error('[Upload] File validation failed:', errorMessage);
       return NextResponse.json(
         { 
           success: false, 
           error: { 
             code: 'INVALID_FILE',
-            message: validation.error 
+            message: errorMessage 
           } 
         },
         { status: 400 }
