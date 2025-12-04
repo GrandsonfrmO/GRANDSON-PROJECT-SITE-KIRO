@@ -242,6 +242,61 @@ export async function PUT(
 
     console.log(`✅ Order ${id} updated successfully`);
 
+    // If status changed to confirmed, send validation email to customer
+    if (status && status.toLowerCase() === 'confirmed' && order.customer_email) {
+      try {
+        // Fetch full order details with items
+        const { data: fullOrder } = await supabase
+          .from('orders')
+          .select(`
+            *,
+            order_items (
+              id,
+              product_id,
+              size,
+              quantity,
+              price,
+              color,
+              products (
+                id,
+                name,
+                images
+              )
+            )
+          `)
+          .eq('id', id)
+          .single();
+
+        if (fullOrder) {
+          await fetch(`http://localhost:3000/api/email/send-validation-confirmation`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderDetails: {
+                orderNumber: fullOrder.order_number,
+                customerName: fullOrder.customer_name,
+                customerEmail: fullOrder.customer_email,
+                customerPhone: fullOrder.customer_phone,
+                deliveryAddress: fullOrder.delivery_address,
+                deliveryZone: fullOrder.delivery_zone,
+                deliveryFee: fullOrder.delivery_fee || 0,
+                total: fullOrder.total_amount,
+                items: (fullOrder.order_items || []).map((item: any) => ({
+                  name: item.products?.name || 'Produit',
+                  image: item.products?.images?.[0],
+                  size: item.size,
+                  quantity: item.quantity,
+                  price: item.price
+                }))
+              }
+            })
+          }).catch(err => console.warn('⚠️ Validation email failed:', err));
+        }
+      } catch (emailError) {
+        console.warn('⚠️ Failed to send validation email:', emailError);
+      }
+    }
+
     // Return the requested status (not the mapped one)
     return NextResponse.json({
       success: true,

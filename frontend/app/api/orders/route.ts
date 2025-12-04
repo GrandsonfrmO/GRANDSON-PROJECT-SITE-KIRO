@@ -74,32 +74,82 @@ export async function POST(request: NextRequest) {
       
       if (response.ok) {
         const orderNumber = data.data?.order?.orderNumber || data.data?.order?.order_number;
+        const orderData = data.data?.order;
         console.log(`[${getTimestamp()}] ✅ Order created successfully via backend`);
         console.log(`[${getTimestamp()}] 🎫 Order number: ${orderNumber}`);
         
-        // Trigger admin notification
-        console.log(`[${getTimestamp()}] 📢 Triggering admin notification...`);
+        // Trigger admin notification and emails
+        console.log(`[${getTimestamp()}] 📢 Triggering notifications and emails...`);
         try {
-          const notificationResponse = await fetch(`${BACKEND_URL}/api/push/send`, {
+          // Send admin notification
+          await fetch(`http://localhost:3000/api/push/send`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               title: '🎉 Nouvelle commande',
-              body: `Commande #${orderNumber} - ${data.data?.order?.totalAmount || data.data?.order?.total}€`,
+              body: `Commande #${orderNumber} - ${orderData?.totalAmount || orderData?.total}€`,
               icon: '/icon-192x192.png',
               url: '/admin/orders',
-              type: 'order'
+              type: 'order',
+              audience: 'admin'
             })
-          });
-          
-          if (notificationResponse.ok) {
-            const notifResult = await notificationResponse.json();
-            console.log(`[${getTimestamp()}] ✅ Admin notification sent: ${notifResult.sent} subscriber(s)`);
-          } else {
-            console.warn(`[${getTimestamp()}] ⚠️  Failed to send admin notification`);
+          }).catch(err => console.warn('⚠️ Push notification failed:', err));
+
+          // Send customer confirmation email
+          if (orderData?.customerEmail) {
+            await fetch(`http://localhost:3000/api/email/send-customer-confirmation`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                orderDetails: {
+                  orderNumber: orderNumber,
+                  customerName: orderData.customerName,
+                  customerEmail: orderData.customerEmail,
+                  customerPhone: orderData.customerPhone,
+                  deliveryAddress: orderData.deliveryAddress,
+                  deliveryZone: orderData.deliveryZone,
+                  deliveryFee: orderData.deliveryFee || 0,
+                  total: orderData.totalAmount || orderData.total,
+                  items: (orderData.items || []).map((item: any) => ({
+                    name: item.product?.name || item.name || 'Produit',
+                    image: item.product?.images?.[0] || item.image,
+                    size: item.size,
+                    quantity: item.quantity,
+                    price: item.price
+                  }))
+                }
+              })
+            }).catch(err => console.warn('⚠️ Customer email failed:', err));
           }
+
+          // Send admin notification email
+          await fetch(`http://localhost:3000/api/email/send-admin-notification`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderDetails: {
+                orderNumber: orderNumber,
+                customerName: orderData.customerName,
+                customerEmail: orderData.customerEmail,
+                customerPhone: orderData.customerPhone,
+                deliveryAddress: orderData.deliveryAddress,
+                deliveryZone: orderData.deliveryZone,
+                deliveryFee: orderData.deliveryFee || 0,
+                total: orderData.totalAmount || orderData.total,
+                items: (orderData.items || []).map((item: any) => ({
+                  name: item.product?.name || item.name || 'Produit',
+                  image: item.product?.images?.[0] || item.image,
+                  size: item.size,
+                  quantity: item.quantity,
+                  price: item.price
+                }))
+              }
+            })
+          }).catch(err => console.warn('⚠️ Admin email failed:', err));
+
+          console.log(`[${getTimestamp()}] ✅ Notifications and emails triggered`);
         } catch (notifError) {
-          console.error(`[${getTimestamp()}] ❌ Error sending admin notification:`, notifError);
+          console.error(`[${getTimestamp()}] ❌ Error triggering notifications:`, notifError);
         }
         
         console.log(`[${getTimestamp()}] ⏱️  Total request duration: ${Date.now() - startTime}ms`);

@@ -210,9 +210,10 @@ export async function POST(request: NextRequest) {
 
     console.log(`✅ Order ${orderNumber} created by admin`);
 
-    // Send admin notification
+    // Send notifications and emails
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/push/send`, {
+      // Send push notification
+      await fetch(`http://localhost:3000/api/push/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -220,11 +221,66 @@ export async function POST(request: NextRequest) {
           body: `Commande #${orderNumber} - ${totalAmount}€`,
           icon: '/icon-192x192.png',
           url: '/admin/orders',
-          type: 'order'
+          type: 'order',
+          audience: 'admin'
         })
-      });
+      }).catch(err => console.warn('⚠️ Push notification failed:', err));
+
+      // Send customer confirmation email
+      if (customerEmail) {
+        await fetch(`http://localhost:3000/api/email/send-customer-confirmation`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderDetails: {
+              orderNumber: orderNumber,
+              customerName: customerName,
+              customerEmail: customerEmail,
+              customerPhone: customerPhone,
+              deliveryAddress: deliveryAddress,
+              deliveryZone: deliveryZone,
+              deliveryFee: deliveryFee || 0,
+              total: totalAmount,
+              items: items.map((item: any) => ({
+                name: item.name || 'Produit',
+                image: item.image,
+                size: item.size,
+                quantity: item.quantity,
+                price: item.price
+              }))
+            }
+          })
+        }).catch(err => console.warn('⚠️ Customer email failed:', err));
+      }
+
+      // Send admin notification email
+      await fetch(`http://localhost:3000/api/email/send-admin-notification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderDetails: {
+            orderNumber: orderNumber,
+            customerName: customerName,
+            customerEmail: customerEmail,
+            customerPhone: customerPhone,
+            deliveryAddress: deliveryAddress,
+            deliveryZone: deliveryZone,
+            deliveryFee: deliveryFee || 0,
+            total: totalAmount,
+            items: items.map((item: any) => ({
+              name: item.name || 'Produit',
+              image: item.image,
+              size: item.size,
+              quantity: item.quantity,
+              price: item.price
+            }))
+          }
+        })
+      }).catch(err => console.warn('⚠️ Admin email failed:', err));
+
+      console.log(`✅ Notifications and emails sent`);
     } catch (notifError) {
-      console.warn('⚠️ Failed to send notification:', notifError);
+      console.warn('⚠️ Failed to send notifications:', notifError);
     }
 
     return NextResponse.json({
