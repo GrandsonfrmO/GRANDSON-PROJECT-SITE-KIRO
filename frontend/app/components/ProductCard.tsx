@@ -7,7 +7,7 @@ import { getImageUrl } from '../lib/imageOptimization';
 interface ProductCardProps {
   product: Product;
   priority?: boolean;
-  onWishlistToggle?: (productId: number) => void;
+  onWishlistToggle?: (productId: string) => void;
 }
 
 // Memoized component for better performance
