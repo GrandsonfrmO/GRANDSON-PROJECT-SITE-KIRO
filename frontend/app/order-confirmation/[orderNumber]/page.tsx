@@ -70,13 +70,29 @@ export default function OrderConfirmationPage() {
         const data = await response.json();
         
         if (data.success && data.data?.order) {
+          // Show warning if in demo mode
+          if (data.warning) {
+            console.warn('Demo mode warning:', data.warning.message);
+          }
           setOrder(data.data.order);
+        } else if (data.error) {
+          // Display user-friendly error message from the API
+          const errorMessage = data.error.message || 'Commande non trouvée';
+          const errorDetails = data.error.details ? ` (${data.error.details})` : '';
+          setError(errorMessage + errorDetails);
+          
+          // Log error code for debugging
+          console.error('Order fetch failed:', {
+            code: data.error.code,
+            message: data.error.message,
+            details: data.error.details
+          });
         } else {
           setError('Commande non trouvée');
         }
       } catch (err) {
         console.error('Error fetching order:', err);
-        setError('Erreur lors de la récupération de la commande');
+        setError('Erreur de connexion. Veuillez vérifier votre connexion internet et réessayer.');
       } finally {
         setLoading(false);
       }

@@ -197,14 +197,31 @@ export default function CheckoutPage() {
       console.log('Order response:', data);
 
       if (data.success && data.data?.order) {
+        // Show warning if in demo mode
+        if (data.warning) {
+          console.warn('Demo mode warning:', data.warning.message);
+        }
         clearCart();
         router.push(`/order-confirmation/${data.data.order.orderNumber}`);
+      } else if (data.error) {
+        // Display user-friendly error message from the API
+        const errorMessage = data.error.message || 'Impossible de créer la commande';
+        const errorDetails = data.error.details ? ` (${data.error.details})` : '';
+        setError(errorMessage + errorDetails);
+        
+        // Log error code for debugging
+        console.error('Order creation failed:', {
+          code: data.error.code,
+          message: data.error.message,
+          details: data.error.details,
+          field: data.error.field
+        });
       } else {
-        setError(data.error?.message || 'Impossible de créer la commande');
+        setError('Impossible de créer la commande');
       }
     } catch (err) {
       console.error('Error creating order:', err);
-      setError('Impossible de créer la commande');
+      setError('Erreur de connexion. Veuillez vérifier votre connexion internet et réessayer.');
     } finally {
       setLoading(false);
     }

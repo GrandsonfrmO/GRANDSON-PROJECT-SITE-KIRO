@@ -1035,9 +1035,16 @@ app.get('/api/orders', async (req, res) => {
   }
 });
 
+// Helper function to get timestamp
+const getTimestamp = () => new Date().toISOString();
+
 // POST /api/orders - Create new order
 app.post('/api/orders', async (req, res) => {
-  console.log('🚨 ORDER ROUTE HIT - NEW VERSION WITH STOCK MANAGEMENT');
+  const startTime = Date.now();
+  console.log(`\n${'='.repeat(80)}`);
+  console.log(`[${getTimestamp()}] 🛒 Backend POST /api/orders - START`);
+  console.log(`${'='.repeat(80)}`);
+  
   try {
     const { 
       customerName, 
@@ -1050,26 +1057,146 @@ app.post('/api/orders', async (req, res) => {
       items 
     } = req.body;
 
-    console.log('🛒 Creating new order for:', customerName);
-    console.log('🛒 ORDER DATA RECEIVED:', JSON.stringify({ customerName, items }, null, 2));
+    console.log(`[${getTimestamp()}] 📝 Order creation request received`);
+    console.log(`[${getTimestamp()}] 👤 Customer: ${customerName}`);
+    console.log(`[${getTimestamp()}] 📞 Phone: ${customerPhone}`);
+    console.log(`[${getTimestamp()}] 📧 Email: ${customerEmail || 'Not provided'}`);
+    console.log(`[${getTimestamp()}] 📍 Delivery zone: ${deliveryZone}`);
+    console.log(`[${getTimestamp()}] 💰 Total amount: ${totalAmount}`);
+    console.log(`[${getTimestamp()}] 📦 Items count: ${items?.length || 0}`);
+    console.log(`[${getTimestamp()}] 📄 Full request body:`, JSON.stringify(req.body, null, 2));
 
     // Validation
+    console.log(`[${getTimestamp()}] 🔍 Validating request data...`);
+    
+    // Check for missing required fields
     if (!customerName || !customerPhone || !deliveryAddress || !deliveryZone || !items || items.length === 0) {
+      console.error(`[${getTimestamp()}] ❌ Validation failed - Missing required fields`);
+      console.error(`[${getTimestamp()}] 📄 Validation details:`, {
+        hasCustomerName: !!customerName,
+        hasCustomerPhone: !!customerPhone,
+        hasDeliveryAddress: !!deliveryAddress,
+        hasDeliveryZone: !!deliveryZone,
+        hasItems: !!items,
+        itemsLength: items?.length || 0
+      });
+      console.log(`[${getTimestamp()}] ⏱️  Request duration: ${Date.now() - startTime}ms`);
+      console.log(`${'='.repeat(80)}\n`);
+      
+      // Provide specific error messages in French
+      let errorMessage = 'Tous les champs requis doivent être remplis';
+      if (!customerName) errorMessage = 'Le nom du client est requis';
+      else if (!customerPhone) errorMessage = 'Le numéro de téléphone est requis';
+      else if (!deliveryAddress) errorMessage = 'L\'adresse de livraison est requise';
+      else if (!deliveryZone) errorMessage = 'La zone de livraison est requise';
+      else if (!items || items.length === 0) errorMessage = 'Le panier ne peut pas être vide';
+      
       return res.status(400).json({
         success: false,
         error: {
           code: 'VALIDATION_ERROR',
-          message: 'Tous les champs requis doivent être remplis'
+          message: errorMessage
         }
       });
     }
+    
+    // Validate phone number format (French format)
+    const phoneRegex = /^(\+33|0)[1-9](\d{2}){4}$/;
+    if (!phoneRegex.test(customerPhone.replace(/\s/g, ''))) {
+      console.error(`[${getTimestamp()}] ❌ Validation failed - Invalid phone format: ${customerPhone}`);
+      console.log(`[${getTimestamp()}] ⏱️  Request duration: ${Date.now() - startTime}ms`);
+      console.log(`${'='.repeat(80)}\n`);
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Le numéro de téléphone doit être au format français valide (ex: 06 12 34 56 78)'
+        }
+      });
+    }
+    
+    // Validate email format if provided
+    if (customerEmail) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(customerEmail)) {
+        console.error(`[${getTimestamp()}] ❌ Validation failed - Invalid email format: ${customerEmail}`);
+        console.log(`[${getTimestamp()}] ⏱️  Request duration: ${Date.now() - startTime}ms`);
+        console.log(`${'='.repeat(80)}\n`);
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'L\'adresse email n\'est pas valide'
+          }
+        });
+      }
+    }
+    
+    // Validate items
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (!item.productId) {
+        console.error(`[${getTimestamp()}] ❌ Validation failed - Missing productId for item ${i}`);
+        console.log(`[${getTimestamp()}] ⏱️  Request duration: ${Date.now() - startTime}ms`);
+        console.log(`${'='.repeat(80)}\n`);
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: `L'article ${i + 1} n'a pas d'identifiant de produit`
+          }
+        });
+      }
+      if (!item.quantity || item.quantity <= 0) {
+        console.error(`[${getTimestamp()}] ❌ Validation failed - Invalid quantity for item ${i}`);
+        console.log(`[${getTimestamp()}] ⏱️  Request duration: ${Date.now() - startTime}ms`);
+        console.log(`${'='.repeat(80)}\n`);
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: `La quantité de l'article ${i + 1} doit être supérieure à zéro`
+          }
+        });
+      }
+      if (!item.price || item.price <= 0) {
+        console.error(`[${getTimestamp()}] ❌ Validation failed - Invalid price for item ${i}`);
+        console.log(`[${getTimestamp()}] ⏱️  Request duration: ${Date.now() - startTime}ms`);
+        console.log(`${'='.repeat(80)}\n`);
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: `Le prix de l'article ${i + 1} doit être supérieur à zéro`
+          }
+        });
+      }
+    }
+    
+    // Validate total amount
+    if (!totalAmount || totalAmount <= 0) {
+      console.error(`[${getTimestamp()}] ❌ Validation failed - Invalid total amount: ${totalAmount}`);
+      console.log(`[${getTimestamp()}] ⏱️  Request duration: ${Date.now() - startTime}ms`);
+      console.log(`${'='.repeat(80)}\n`);
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Le montant total doit être supérieur à zéro'
+        }
+      });
+    }
+    
+    console.log(`[${getTimestamp()}] ✅ Validation passed`);
 
     // Vérifier le stock avant de créer la commande
-    console.log('📦 Checking stock availability...');
-    console.log('📦 ITEMS TO CHECK:', JSON.stringify(items, null, 2));
+    console.log(`[${getTimestamp()}] 📦 Checking stock availability for ${items.length} items...`);
+    console.log(`[${getTimestamp()}] 📦 Items to check:`, JSON.stringify(items, null, 2));
     const stockCheckResults = [];
     
     for (const item of items) {
+      console.log(`[${getTimestamp()}] 🔍 Checking product: ${item.productId}`);
+      
       const { data: product, error: productError } = await supabase
         .from('products')
         .select('id, name, stock, is_active')
@@ -1077,31 +1204,60 @@ app.post('/api/orders', async (req, res) => {
         .single();
 
       if (productError || !product) {
+        console.error(`[${getTimestamp()}] ❌ Product not found: ${item.productId}`);
+        console.error(`[${getTimestamp()}] 📄 Database error:`, productError);
+        console.log(`[${getTimestamp()}] ⏱️  Request duration: ${Date.now() - startTime}ms`);
+        console.log(`${'='.repeat(80)}\n`);
         return res.status(400).json({
           success: false,
           error: {
             code: 'PRODUCT_NOT_FOUND',
-            message: `Produit ${item.productId} non trouvé`
+            message: `Le produit demandé n'existe pas ou n'est plus disponible. Veuillez actualiser votre panier.`
           }
         });
       }
 
+      console.log(`[${getTimestamp()}] 📦 Product found: ${product.name} (Stock: ${product.stock}, Active: ${product.is_active})`);
+
       if (!product.is_active) {
+        console.error(`[${getTimestamp()}] ❌ Product inactive: ${product.name}`);
+        console.log(`[${getTimestamp()}] ⏱️  Request duration: ${Date.now() - startTime}ms`);
+        console.log(`${'='.repeat(80)}\n`);
         return res.status(400).json({
           success: false,
           error: {
             code: 'PRODUCT_INACTIVE',
-            message: `Le produit ${product.name} n'est plus disponible`
+            message: `Le produit "${product.name}" n'est plus disponible à la vente. Veuillez le retirer de votre panier.`
           }
         });
       }
 
       if (product.stock < item.quantity) {
+        console.error(`[${getTimestamp()}] ❌ Insufficient stock for: ${product.name}`);
+        console.error(`[${getTimestamp()}] 📊 Available: ${product.stock}, Requested: ${item.quantity}`);
+        console.log(`[${getTimestamp()}] ⏱️  Request duration: ${Date.now() - startTime}ms`);
+        console.log(`${'='.repeat(80)}\n`);
+        
+        // Provide helpful message based on stock availability
+        let stockMessage;
+        if (product.stock === 0) {
+          stockMessage = `Le produit "${product.name}" est en rupture de stock. Veuillez le retirer de votre panier.`;
+        } else if (product.stock === 1) {
+          stockMessage = `Il ne reste qu'un seul exemplaire de "${product.name}" en stock. Veuillez ajuster la quantité dans votre panier.`;
+        } else {
+          stockMessage = `Stock insuffisant pour "${product.name}". Il ne reste que ${product.stock} exemplaire${product.stock > 1 ? 's' : ''} en stock. Veuillez ajuster la quantité dans votre panier.`;
+        }
+        
         return res.status(400).json({
           success: false,
           error: {
             code: 'INSUFFICIENT_STOCK',
-            message: `Stock insuffisant pour ${product.name}. Disponible: ${product.stock}, Demandé: ${item.quantity}`
+            message: stockMessage,
+            details: {
+              productName: product.name,
+              availableStock: product.stock,
+              requestedQuantity: item.quantity
+            }
           }
         });
       }
@@ -1113,42 +1269,67 @@ app.post('/api/orders', async (req, res) => {
         requestedQuantity: item.quantity,
         newStock: product.stock - item.quantity
       });
+      
+      console.log(`[${getTimestamp()}] ✅ Stock check passed for: ${product.name}`);
     }
 
-    console.log('✅ Stock check passed for all items');
+    console.log(`[${getTimestamp()}] ✅ Stock check passed for all ${items.length} items`);
+    console.log(`[${getTimestamp()}] 📊 Stock check results:`, JSON.stringify(stockCheckResults, null, 2));
 
     // Generate order number
     const orderNumber = `GS${Date.now().toString().slice(-6)}`;
+    console.log(`[${getTimestamp()}] 🎫 Generated order number: ${orderNumber}`);
 
     // Create order
+    console.log(`[${getTimestamp()}] 💾 Creating order in database...`);
+    const orderData = {
+      order_number: orderNumber,
+      customer_name: customerName,
+      customer_phone: customerPhone,
+      customer_email: customerEmail || null,
+      delivery_address: deliveryAddress,
+      delivery_zone: deliveryZone,
+      delivery_fee: parseFloat(deliveryFee) || 0,
+      total_amount: parseFloat(totalAmount),
+      status: 'PENDING'
+    };
+    console.log(`[${getTimestamp()}] 📄 Order data:`, JSON.stringify(orderData, null, 2));
+    
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .insert([{
-        order_number: orderNumber,
-        customer_name: customerName,
-        customer_phone: customerPhone,
-        customer_email: customerEmail || null,
-        delivery_address: deliveryAddress,
-        delivery_zone: deliveryZone,
-        delivery_fee: parseFloat(deliveryFee) || 0,
-        total_amount: parseFloat(totalAmount),
-        status: 'PENDING'
-      }])
+      .insert([orderData])
       .select()
       .single();
 
     if (orderError) {
-      console.error('❌ Error creating order:', orderError);
+      console.error(`[${getTimestamp()}] ❌ Error creating order in database`);
+      console.error(`[${getTimestamp()}] 📄 Database error:`, orderError);
+      console.log(`[${getTimestamp()}] ⏱️  Request duration: ${Date.now() - startTime}ms`);
+      console.log(`${'='.repeat(80)}\n`);
+      
+      // Provide user-friendly error message
+      let errorMessage = 'Erreur lors de la création de la commande. Veuillez réessayer.';
+      if (orderError.code === '23505') {
+        // Duplicate key error
+        errorMessage = 'Une erreur s\'est produite lors de la génération du numéro de commande. Veuillez réessayer.';
+      } else if (orderError.code === '23503') {
+        // Foreign key violation
+        errorMessage = 'Une erreur s\'est produite avec les données de la commande. Veuillez vérifier votre panier et réessayer.';
+      }
+      
       return res.status(500).json({
         success: false,
         error: {
-          code: 'DATABASE_ERROR',
-          message: orderError.message
+          code: 'ORDER_CREATION_FAILED',
+          message: errorMessage
         }
       });
     }
+    
+    console.log(`[${getTimestamp()}] ✅ Order created in database with ID: ${order.id}`);
 
     // Create order items
+    console.log(`[${getTimestamp()}] 📦 Creating ${items.length} order items...`);
     const orderItems = items.map(item => ({
       order_id: order.id,
       product_id: item.productId,
@@ -1156,60 +1337,105 @@ app.post('/api/orders', async (req, res) => {
       quantity: parseInt(item.quantity),
       price: parseFloat(item.price)
     }));
+    console.log(`[${getTimestamp()}] 📄 Order items data:`, JSON.stringify(orderItems, null, 2));
 
     const { error: itemsError } = await supabase
       .from('order_items')
       .insert(orderItems);
 
     if (itemsError) {
-      console.error('❌ Error creating order items:', itemsError);
+      console.error(`[${getTimestamp()}] ❌ Error creating order items`);
+      console.error(`[${getTimestamp()}] 📄 Database error:`, itemsError);
+      console.log(`[${getTimestamp()}] 🔄 Rolling back order creation...`);
+      
       // Rollback order creation
-      await supabase.from('orders').delete().eq('id', order.id);
+      try {
+        const { error: rollbackError } = await supabase.from('orders').delete().eq('id', order.id);
+        if (rollbackError) {
+          console.error(`[${getTimestamp()}] ❌ Error during rollback:`, rollbackError);
+        } else {
+          console.log(`[${getTimestamp()}] ✅ Order rollback completed successfully`);
+        }
+      } catch (rollbackException) {
+        console.error(`[${getTimestamp()}] ❌ Exception during rollback:`, rollbackException);
+      }
+      
+      console.log(`[${getTimestamp()}] ⏱️  Request duration: ${Date.now() - startTime}ms`);
+      console.log(`${'='.repeat(80)}\n`);
+      
       return res.status(500).json({
         success: false,
         error: {
-          code: 'DATABASE_ERROR',
-          message: itemsError.message
+          code: 'ORDER_CREATION_FAILED',
+          message: 'Erreur lors de la création de la commande. Veuillez réessayer ou contacter le support si le problème persiste.'
         }
       });
     }
+    
+    console.log(`[${getTimestamp()}] ✅ Order items created successfully`);
 
     // Mettre à jour le stock des produits
-    console.log('📦 Updating product stock...');
+    console.log(`[${getTimestamp()}] 📦 Updating product stock for ${stockCheckResults.length} products...`);
     const stockUpdatePromises = stockCheckResults.map(async (stockResult) => {
+      console.log(`[${getTimestamp()}] 🔄 Updating stock for ${stockResult.name}: ${stockResult.currentStock} → ${stockResult.newStock}`);
+      
       const { error: updateError } = await supabase
         .from('products')
         .update({ stock: stockResult.newStock })
         .eq('id', stockResult.productId);
 
       if (updateError) {
-        console.error(`❌ Error updating stock for product ${stockResult.productId}:`, updateError);
+        console.error(`[${getTimestamp()}] ❌ Error updating stock for product ${stockResult.productId}`);
+        console.error(`[${getTimestamp()}] 📄 Database error:`, updateError);
         throw new Error(`Erreur lors de la mise à jour du stock pour ${stockResult.name}`);
       }
 
-      console.log(`✅ Stock updated for ${stockResult.name}: ${stockResult.currentStock} → ${stockResult.newStock}`);
+      console.log(`[${getTimestamp()}] ✅ Stock updated for ${stockResult.name}`);
     });
 
     try {
       await Promise.all(stockUpdatePromises);
-      console.log('✅ All product stocks updated successfully');
+      console.log(`[${getTimestamp()}] ✅ All product stocks updated successfully`);
     } catch (stockUpdateError) {
-      console.error('❌ Error updating stock:', stockUpdateError);
-      // Rollback order and items creation
-      await supabase.from('order_items').delete().eq('order_id', order.id);
-      await supabase.from('orders').delete().eq('id', order.id);
+      console.error(`[${getTimestamp()}] ❌ Error updating stock`);
+      console.error(`[${getTimestamp()}] 📄 Error:`, stockUpdateError);
+      console.log(`[${getTimestamp()}] 🔄 Rolling back order and items creation...`);
+      
+      // Rollback order and items creation with proper error handling
+      try {
+        const { error: itemsRollbackError } = await supabase.from('order_items').delete().eq('order_id', order.id);
+        if (itemsRollbackError) {
+          console.error(`[${getTimestamp()}] ❌ Error rolling back order items:`, itemsRollbackError);
+        } else {
+          console.log(`[${getTimestamp()}] ✅ Order items rollback completed`);
+        }
+        
+        const { error: orderRollbackError } = await supabase.from('orders').delete().eq('id', order.id);
+        if (orderRollbackError) {
+          console.error(`[${getTimestamp()}] ❌ Error rolling back order:`, orderRollbackError);
+        } else {
+          console.log(`[${getTimestamp()}] ✅ Order rollback completed`);
+        }
+      } catch (rollbackException) {
+        console.error(`[${getTimestamp()}] ❌ Exception during rollback:`, rollbackException);
+      }
+      
+      console.log(`[${getTimestamp()}] ⏱️  Request duration: ${Date.now() - startTime}ms`);
+      console.log(`${'='.repeat(80)}\n`);
+      
       return res.status(500).json({
         success: false,
         error: {
-          code: 'STOCK_UPDATE_ERROR',
-          message: stockUpdateError.message
+          code: 'STOCK_UPDATE_FAILED',
+          message: 'Erreur lors de la mise à jour du stock. La commande n\'a pas été créée. Veuillez réessayer.'
         }
       });
     }
 
-    console.log('✅ Order created successfully:', orderNumber);
+    console.log(`[${getTimestamp()}] ✅ Order created successfully: ${orderNumber}`);
 
     // Récupérer les détails des produits pour les emails
+    console.log(`[${getTimestamp()}] 📧 Fetching product details for email notifications...`);
     const itemsWithProductDetails = await Promise.all(
       items.map(async (item) => {
         try {
@@ -1220,6 +1446,7 @@ app.post('/api/orders', async (req, res) => {
             .single();
 
           if (productError || !product) {
+            console.log(`[${getTimestamp()}] ⚠️  Could not fetch product details for: ${item.productId}`);
             return {
               name: `Produit ID: ${item.productId}`,
               quantity: item.quantity,
@@ -1237,7 +1464,7 @@ app.post('/api/orders', async (req, res) => {
             size: item.size
           };
         } catch (error) {
-          console.error('Error fetching product details:', error);
+          console.error(`[${getTimestamp()}] ❌ Error fetching product details for ${item.productId}:`, error);
           return {
             name: `Produit ID: ${item.productId}`,
             quantity: item.quantity,
@@ -1248,6 +1475,7 @@ app.post('/api/orders', async (req, res) => {
         }
       })
     );
+    console.log(`[${getTimestamp()}] ✅ Product details fetched for email`);
 
     // Préparer les détails de la commande pour les emails
     const orderDetailsForEmail = {
@@ -1263,45 +1491,71 @@ app.post('/api/orders', async (req, res) => {
     };
 
     // Envoyer les emails de notification automatiquement
+    console.log(`[${getTimestamp()}] 📧 Sending email notifications...`);
     try {
       const axios = require('axios');
       
       // 1. Email de confirmation au client (si email fourni)
       if (order.customer_email) {
+        console.log(`[${getTimestamp()}] 📧 Sending customer confirmation email to: ${order.customer_email}`);
         await axios.post(`http://localhost:${PORT}/api/email/send-customer-confirmation`, {
           orderDetails: orderDetailsForEmail
         });
-        console.log('✅ Customer confirmation email sent for order:', orderNumber);
+        console.log(`[${getTimestamp()}] ✅ Customer confirmation email sent for order: ${orderNumber}`);
       } else {
-        console.log('⚠️ No customer email provided for order:', orderNumber);
+        console.log(`[${getTimestamp()}] ⚠️  No customer email provided for order: ${orderNumber}`);
       }
 
       // 2. Notification à l'admin
+      console.log(`[${getTimestamp()}] 📧 Sending admin notification email...`);
       await axios.post(`http://localhost:${PORT}/api/email/send-admin-notification`, {
         orderDetails: orderDetailsForEmail
       });
-      console.log('✅ Admin notification email sent for order:', orderNumber);
+      console.log(`[${getTimestamp()}] ✅ Admin notification email sent for order: ${orderNumber}`);
     } catch (emailError) {
-      console.error('⚠️ Error sending notification emails:', emailError.message);
+      console.error(`[${getTimestamp()}] ⚠️  Error sending notification emails:`, emailError.message);
+      console.error(`[${getTimestamp()}] 📄 Email error details:`, emailError);
       // Ne pas faire échouer la commande si les emails échouent
     }
+
+    console.log(`[${getTimestamp()}] 🎉 Order creation completed successfully`);
+    console.log(`[${getTimestamp()}] 📊 Final order details:`, JSON.stringify({
+      orderNumber: order.order_number,
+      orderId: order.id,
+      customerName: order.customer_name,
+      totalAmount: order.total_amount,
+      itemCount: items.length
+    }, null, 2));
+    console.log(`[${getTimestamp()}] ⏱️  Total request duration: ${Date.now() - startTime}ms`);
+    console.log(`${'='.repeat(80)}\n`);
+
+    // Transform response to include both formats for compatibility
+    const responseOrder = {
+      ...order,
+      orderNumber: order.order_number,  // camelCase for frontend
+      order_number: order.order_number  // snake_case for compatibility
+    };
 
     res.status(201).json({
       success: true,
       data: { 
-        order: {
-          ...order,
-          orderNumber: order.order_number
-        }
+        order: responseOrder
       }
     });
   } catch (error) {
-    console.error('❌ Create order error:', error);
+    console.error(`[${getTimestamp()}] ❌ Create order error - Unexpected exception`);
+    console.error(`[${getTimestamp()}] 📄 Error type: ${error instanceof Error ? error.name : 'Unknown'}`);
+    console.error(`[${getTimestamp()}] 📄 Error message: ${error instanceof Error ? error.message : String(error)}`);
+    console.error(`[${getTimestamp()}] 📄 Error stack:`, error instanceof Error ? error.stack : 'No stack trace');
+    console.log(`[${getTimestamp()}] ⏱️  Request duration: ${Date.now() - startTime}ms`);
+    console.log(`${'='.repeat(80)}\n`);
+    
+    // Ensure consistent error response format
     res.status(500).json({
       success: false,
       error: {
         code: 'INTERNAL_ERROR',
-        message: 'Erreur lors de la création de la commande'
+        message: 'Une erreur inattendue s\'est produite lors de la création de votre commande. Veuillez réessayer ou contacter le support si le problème persiste.'
       }
     });
   }
@@ -1309,10 +1563,16 @@ app.post('/api/orders', async (req, res) => {
 
 // GET /api/orders/:orderNumber - Get order by order number
 app.get('/api/orders/:orderNumber', async (req, res) => {
+  const startTime = Date.now();
+  console.log(`\n${'='.repeat(80)}`);
+  console.log(`[${getTimestamp()}] 🔍 Backend GET /api/orders/:orderNumber - START`);
+  console.log(`${'='.repeat(80)}`);
+  
   try {
     const { orderNumber } = req.params;
     
-    console.log('🔍 Fetching order:', orderNumber);
+    console.log(`[${getTimestamp()}] 🎫 Fetching order: ${orderNumber}`);
+    console.log(`[${getTimestamp()}] 💾 Querying database...`);
 
     // Get order details
     const { data: order, error: orderError } = await supabase
@@ -1323,6 +1583,9 @@ app.get('/api/orders/:orderNumber', async (req, res) => {
 
     if (orderError) {
       if (orderError.code === 'PGRST116') {
+        console.log(`[${getTimestamp()}] ❌ Order not found: ${orderNumber}`);
+        console.log(`[${getTimestamp()}] ⏱️  Request duration: ${Date.now() - startTime}ms`);
+        console.log(`${'='.repeat(80)}\n`);
         return res.status(404).json({
           success: false,
           error: {
@@ -1331,7 +1594,10 @@ app.get('/api/orders/:orderNumber', async (req, res) => {
           }
         });
       }
-      console.error('❌ Error fetching order:', orderError);
+      console.error(`[${getTimestamp()}] ❌ Error fetching order from database`);
+      console.error(`[${getTimestamp()}] 📄 Database error:`, orderError);
+      console.log(`[${getTimestamp()}] ⏱️  Request duration: ${Date.now() - startTime}ms`);
+      console.log(`${'='.repeat(80)}\n`);
       return res.status(500).json({
         success: false,
         error: {
@@ -1341,7 +1607,17 @@ app.get('/api/orders/:orderNumber', async (req, res) => {
       });
     }
 
+    console.log(`[${getTimestamp()}] ✅ Order found in database`);
+    console.log(`[${getTimestamp()}] 📊 Order details:`, JSON.stringify({
+      id: order.id,
+      orderNumber: order.order_number,
+      customerName: order.customer_name,
+      status: order.status,
+      totalAmount: order.total_amount
+    }, null, 2));
+
     // Get order items with product details
+    console.log(`[${getTimestamp()}] 📦 Fetching order items...`);
     const { data: orderItems, error: itemsError } = await supabase
       .from('order_items')
       .select(`
@@ -1356,7 +1632,10 @@ app.get('/api/orders/:orderNumber', async (req, res) => {
       .eq('order_id', order.id);
 
     if (itemsError) {
-      console.error('❌ Error fetching order items:', itemsError);
+      console.error(`[${getTimestamp()}] ❌ Error fetching order items`);
+      console.error(`[${getTimestamp()}] 📄 Database error:`, itemsError);
+      console.log(`[${getTimestamp()}] ⏱️  Request duration: ${Date.now() - startTime}ms`);
+      console.log(`${'='.repeat(80)}\n`);
       return res.status(500).json({
         success: false,
         error: {
@@ -1366,10 +1645,14 @@ app.get('/api/orders/:orderNumber', async (req, res) => {
       });
     }
 
-    // Transform the order data
+    console.log(`[${getTimestamp()}] ✅ Order items fetched: ${orderItems.length} items`);
+
+    // Transform the order data with both camelCase and snake_case for compatibility
+    console.log(`[${getTimestamp()}] 🔄 Transforming order data...`);
     const transformedOrder = {
       id: order.id,
-      orderNumber: order.order_number,
+      orderNumber: order.order_number,      // camelCase for frontend
+      order_number: order.order_number,     // snake_case for compatibility
       customerName: order.customer_name,
       customerPhone: order.customer_phone,
       customerEmail: order.customer_email,
@@ -1389,14 +1672,23 @@ app.get('/api/orders/:orderNumber', async (req, res) => {
       }))
     };
 
-    console.log('✅ Order found:', orderNumber);
+    console.log(`[${getTimestamp()}] ✅ Order data transformed successfully`);
+    console.log(`[${getTimestamp()}] 📤 Sending response with orderNumber: ${transformedOrder.orderNumber}`);
+    console.log(`[${getTimestamp()}] ⏱️  Total request duration: ${Date.now() - startTime}ms`);
+    console.log(`${'='.repeat(80)}\n`);
 
     res.json({
       success: true,
       data: { order: transformedOrder }
     });
   } catch (error) {
-    console.error('❌ Get order error:', error);
+    console.error(`[${getTimestamp()}] ❌ Get order error - Unexpected exception`);
+    console.error(`[${getTimestamp()}] 📄 Error type: ${error instanceof Error ? error.name : 'Unknown'}`);
+    console.error(`[${getTimestamp()}] 📄 Error message: ${error instanceof Error ? error.message : String(error)}`);
+    console.error(`[${getTimestamp()}] 📄 Error stack:`, error instanceof Error ? error.stack : 'No stack trace');
+    console.log(`[${getTimestamp()}] ⏱️  Request duration: ${Date.now() - startTime}ms`);
+    console.log(`${'='.repeat(80)}\n`);
+    
     res.status(500).json({
       success: false,
       error: {
