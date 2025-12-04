@@ -20,8 +20,8 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   return (
     <Link href={`/products/${product.id}`} className="touch-target group block">
-      <div className={`bg-white dark:bg-neutral-800 rounded-2xl overflow-hidden shadow-mobile hover:shadow-mobile-lg transition-all duration-300 border-2 border-neutral-200 dark:border-neutral-700 hover:border-accent group-hover:shadow-accent/20 relative will-change-transform ${
-        isMobile ? 'active:scale-95' : 'hover:-translate-y-2 hover:scale-105'
+      <div className={`bg-white dark:bg-neutral-800 rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 border-2 border-neutral-200 dark:border-neutral-700 hover:border-accent group-hover:shadow-accent/30 relative will-change-transform ${
+        isMobile ? 'active:scale-95' : 'hover:-translate-y-3 hover:scale-[1.02]'
       }`}>
         {/* Product Image */}
         <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-neutral-100 to-neutral-200">
@@ -114,23 +114,40 @@ export default function ProductCard({ product }: ProductCardProps) {
           </button>
         </div>
 
-        {/* Enhanced Product Info - Mobile Optimized */}
-        <div className="p-1.5">
-          <h3 className="font-bold text-neutral-900 dark:text-white mb-1 line-clamp-1 text-xs leading-tight">
+        {/* Enhanced Product Info - Premium Design */}
+        <div className="p-5 bg-gradient-to-br from-white to-neutral-50">
+          <h3 className="font-black text-neutral-900 dark:text-white mb-3 line-clamp-2 text-base leading-tight group-hover:text-accent transition-colors duration-300">
             {product.name}
           </h3>
           
+          {/* Category Badge */}
+          <div className="mb-3">
+            <span className="inline-block bg-neutral-100 text-neutral-600 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
+              {product.category}
+            </span>
+          </div>
+          
           <div className="flex items-center justify-between">
-            <div className="flex items-baseline gap-1">
-              <p className="text-accent font-black text-sm">
-                {product.price.toLocaleString()}
-              </p>
-              <p className="text-neutral-400 text-xs">GNF</p>
+            <div className="flex flex-col">
+              <div className="flex items-baseline gap-1.5">
+                <p className="text-accent font-black text-xl">
+                  {product.price.toLocaleString()}
+                </p>
+                <p className="text-neutral-500 text-sm font-bold">GNF</p>
+              </div>
+              {product.stock > 0 && product.stock < 5 && (
+                <p className="text-xs text-red-600 font-bold mt-1">
+                  Plus que {product.stock} en stock!
+                </p>
+              )}
             </div>
             
             {product.stock > 0 && (
-              <div className="bg-green-500 text-white px-1.5 py-0.5 rounded text-xs font-bold">
-                ✓
+              <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-3 py-2 rounded-xl text-xs font-black shadow-lg flex items-center gap-1">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+                Dispo
               </div>
             )}
           </div>

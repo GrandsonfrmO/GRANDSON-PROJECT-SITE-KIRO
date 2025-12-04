@@ -46,41 +46,51 @@ export default function ProductGrid({ products }: ProductGridProps) {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Products Grid with Enhanced Layout */}
-      <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 lg:gap-8 ${animationClass}`}>
+    <div className="space-y-12">
+      {/* Products Grid with Premium Layout */}
+      <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 lg:gap-10 ${animationClass}`}>
         {visibleProducts.map((product, index) => (
           <div
             key={product.id}
-            className="animate-fade-in-up"
-            style={{ animationDelay: `${index * 100}ms` }}
+            className="animate-fade-in-up transform transition-all duration-300"
+            style={{ animationDelay: `${index * 50}ms` }}
           >
             <ProductCard product={product} />
           </div>
         ))}
       </div>
 
-      {/* Load More Button */}
+      {/* Enhanced Load More Button */}
       {!showAll && products.length > INITIAL_LOAD && (
-        <div className="text-center pt-8">
+        <div className="text-center pt-12">
           <button
             onClick={handleLoadMore}
-            className="group relative inline-flex items-center gap-3 bg-gradient-to-r from-accent to-green-500 hover:from-green-500 hover:to-accent text-black px-8 py-4 rounded-2xl font-black uppercase tracking-wide transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 overflow-hidden"
+            className="group relative inline-flex items-center gap-4 bg-gradient-to-r from-accent via-green-500 to-accent hover:from-green-500 hover:via-accent hover:to-green-500 text-black px-12 py-5 rounded-3xl font-black uppercase tracking-wider transition-all duration-500 shadow-2xl hover:shadow-accent/50 hover:scale-110 active:scale-95 overflow-hidden border-2 border-accent/30"
           >
-            {/* Button glow effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            {/* Animated glow effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-white/30 via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-shimmer"></div>
             
-            <span className="relative z-10">
-              Voir {products.length - INITIAL_LOAD} produits de plus
+            <svg className="relative z-10 w-6 h-6 group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            
+            <span className="relative z-10 text-lg">
+              Charger {products.length - INITIAL_LOAD} produits de plus
             </span>
-            <svg className="relative z-10 w-5 h-5 group-hover:translate-y-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            
+            <svg className="relative z-10 w-6 h-6 group-hover:translate-y-2 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
             </svg>
           </button>
           
-          <p className="text-neutral-500 text-sm mt-4">
-            {INITIAL_LOAD} sur {products.length} produits affichés
-          </p>
+          <div className="mt-6 inline-flex items-center gap-2 bg-neutral-100 px-6 py-3 rounded-full">
+            <svg className="w-5 h-5 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-neutral-600 font-bold text-sm">
+              {INITIAL_LOAD} sur {products.length} produits affichés
+            </span>
+          </div>
         </div>
       )}
 
