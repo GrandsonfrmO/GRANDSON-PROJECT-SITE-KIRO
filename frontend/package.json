@@ -5,10 +5,15 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:analyze": "ANALYZE=true next build",
     "start": "next start",
     "lint": "eslint",
     "test": "jest --watch",
-    "test:ci": "jest --ci"
+    "test:ci": "jest --ci",
+    "test:prod": "node ../scripts/test-production.js",
+    "analyze": "node ../scripts/analyze-bundle.js",
+    "lighthouse": "lhci autorun",
+    "perf": "npm run build && npm run analyze"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.81.1",
