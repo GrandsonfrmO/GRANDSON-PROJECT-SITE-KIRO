@@ -159,8 +159,9 @@ export default function ProductsPage() {
   // Track search
   useEffect(() => {
     if (searchTerm && typeof window !== 'undefined' && window.gtag) {
+      const gtag = window.gtag;
       const timeoutId = setTimeout(() => {
-        window.gtag('event', 'search', {
+        gtag('event', 'search', {
           search_term: searchTerm
         });
       }, 1000);

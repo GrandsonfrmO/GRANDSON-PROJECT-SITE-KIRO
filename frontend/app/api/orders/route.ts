@@ -76,6 +76,32 @@ export async function POST(request: NextRequest) {
         const orderNumber = data.data?.order?.orderNumber || data.data?.order?.order_number;
         console.log(`[${getTimestamp()}] ✅ Order created successfully via backend`);
         console.log(`[${getTimestamp()}] 🎫 Order number: ${orderNumber}`);
+        
+        // Trigger admin notification
+        console.log(`[${getTimestamp()}] 📢 Triggering admin notification...`);
+        try {
+          const notificationResponse = await fetch(`${BACKEND_URL}/api/push/send`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: '🎉 Nouvelle commande',
+              body: `Commande #${orderNumber} - ${data.data?.order?.totalAmount || data.data?.order?.total}€`,
+              icon: '/icon-192x192.png',
+              url: '/admin/orders',
+              type: 'order'
+            })
+          });
+          
+          if (notificationResponse.ok) {
+            const notifResult = await notificationResponse.json();
+            console.log(`[${getTimestamp()}] ✅ Admin notification sent: ${notifResult.sent} subscriber(s)`);
+          } else {
+            console.warn(`[${getTimestamp()}] ⚠️  Failed to send admin notification`);
+          }
+        } catch (notifError) {
+          console.error(`[${getTimestamp()}] ❌ Error sending admin notification:`, notifError);
+        }
+        
         console.log(`[${getTimestamp()}] ⏱️  Total request duration: ${Date.now() - startTime}ms`);
         console.log(`${'='.repeat(80)}\n`);
         return NextResponse.json(data);

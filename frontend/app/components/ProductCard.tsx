@@ -28,7 +28,9 @@ const ProductCard = memo(function ProductCard({ product, priority = false, onWis
     e.preventDefault();
     e.stopPropagation();
     setIsWishlisted(!isWishlisted);
-    onWishlistToggle?.(product.id);
+    if (onWishlistToggle) {
+      onWishlistToggle(String(product.id));
+    }
     
     // Track analytics
     if (typeof window !== 'undefined' && window.gtag) {
