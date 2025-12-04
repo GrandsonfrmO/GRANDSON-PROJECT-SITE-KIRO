@@ -28,20 +28,39 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
   'http://192.168.1.252:3000',
+  'https://grandson-project.vercel.app',
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
+console.log('🔒 CORS allowed origins:', allowedOrigins);
+
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
+    // Allow requests with no origin (like mobile apps, Postman, curl)
+    if (!origin) {
+      console.log('✅ CORS: Allowing request with no origin');
+      return callback(null, true);
+    }
+    
+    // Check if origin is in allowed list
     if (allowedOrigins.indexOf(origin) !== -1) {
+      console.log(`✅ CORS: Allowing request from: ${origin}`);
       callback(null, true);
     } else {
-      console.warn(`⚠️  CORS blocked request from origin: ${origin}`);
-      callback(null, true); // Allow anyway in development
+      // In production, be more strict
+      if (process.env.NODE_ENV === 'production') {
+        console.error(`❌ CORS: Blocked request from unauthorized origin: ${origin}`);
+        callback(new Error('Not allowed by CORS'));
+      } else {
+        // In development, allow but warn
+        console.warn(`⚠️  CORS: Allowing request from non-whitelisted origin (dev mode): ${origin}`);
+        callback(null, true);
+      }
     }
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
 app.use(express.json());
@@ -333,28 +352,64 @@ app.get('/api/products/:id', async (req, res) => {
 // ==================== ADMIN MIDDLEWARE ====================
 
 const authenticateAdmin = (req, res, next) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
+  const authHeader = req.headers.authorization;
   
-  if (!token) {
+  if (!authHeader) {
+    console.error('🔒 Auth failed: No authorization header');
     return res.status(401).json({
       success: false,
       error: {
-        code: 'UNAUTHORIZED',
-        message: 'Token d\'authentification requis'
+        code: 'NO_TOKEN',
+        message: 'Authentication token required. Please log in again.',
+        timestamp: new Date().toISOString()
+      }
+    });
+  }
+
+  const token = authHeader.replace('Bearer ', '');
+  
+  if (!token || token === authHeader) {
+    console.error('🔒 Auth failed: Invalid authorization header format');
+    return res.status(401).json({
+      success: false,
+      error: {
+        code: 'INVALID_TOKEN_FORMAT',
+        message: 'Invalid authorization header format. Expected: Bearer <token>',
+        timestamp: new Date().toISOString()
       }
     });
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-this-in-production');
+    const jwtSecret = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
+    const decoded = jwt.verify(token, jwtSecret);
+    
+    console.log(`✅ Auth successful for user: ${decoded.username} (ID: ${decoded.id})`);
     req.admin = decoded;
     next();
   } catch (error) {
+    console.error('🔒 Auth failed:', error.message);
+    
+    let errorCode = 'INVALID_TOKEN';
+    let errorMessage = 'Invalid or expired authentication token. Please log in again.';
+    
+    if (error.name === 'TokenExpiredError') {
+      errorCode = 'TOKEN_EXPIRED';
+      errorMessage = 'Authentication token has expired. Please log in again.';
+    } else if (error.name === 'JsonWebTokenError') {
+      errorCode = 'INVALID_TOKEN';
+      errorMessage = 'Invalid authentication token. Please log in again.';
+    } else if (error.name === 'NotBeforeError') {
+      errorCode = 'TOKEN_NOT_ACTIVE';
+      errorMessage = 'Authentication token is not yet active.';
+    }
+    
     return res.status(401).json({
       success: false,
       error: {
-        code: 'UNAUTHORIZED',
-        message: 'Token invalide'
+        code: errorCode,
+        message: errorMessage,
+        timestamp: new Date().toISOString()
       }
     });
   }
@@ -1456,11 +1511,21 @@ app.post('/api/orders', async (req, res) => {
             };
           }
 
+          // Parse images if it's a string
+          let images = product.images;
+          if (typeof images === 'string') {
+            try {
+              images = JSON.parse(images);
+            } catch (e) {
+              images = [];
+            }
+          }
+          
           return {
             name: product.name,
             quantity: item.quantity,
             price: item.price,
-            image: product.images && product.images.length > 0 ? product.images[0] : null,
+            image: images && images.length > 0 ? images[0] : null,
             size: item.size
           };
         } catch (error) {
@@ -1492,30 +1557,44 @@ app.post('/api/orders', async (req, res) => {
 
     // Envoyer les emails de notification automatiquement
     console.log(`[${getTimestamp()}] 📧 Sending email notifications...`);
-    try {
-      const axios = require('axios');
-      
-      // 1. Email de confirmation au client (si email fourni)
-      if (order.customer_email) {
-        console.log(`[${getTimestamp()}] 📧 Sending customer confirmation email to: ${order.customer_email}`);
-        await axios.post(`http://localhost:${PORT}/api/email/send-customer-confirmation`, {
-          orderDetails: orderDetailsForEmail
-        });
-        console.log(`[${getTimestamp()}] ✅ Customer confirmation email sent for order: ${orderNumber}`);
-      } else {
-        console.log(`[${getTimestamp()}] ⚠️  No customer email provided for order: ${orderNumber}`);
+    const emailService = require('./emailService');
+    
+    // 1. Email de confirmation au client (si email fourni)
+    if (order.customer_email) {
+      try {
+        console.log(`[${getTimestamp()}] 📧 Attempting to send customer confirmation email to: ${order.customer_email}`);
+        const customerEmailResult = await emailService.sendCustomerConfirmation(orderDetailsForEmail);
+        
+        if (customerEmailResult.success) {
+          console.log(`[${getTimestamp()}] ✅ Customer confirmation email sent successfully for order: ${orderNumber}`);
+          console.log(`[${getTimestamp()}] 📧 Message ID: ${customerEmailResult.messageId}`);
+        } else {
+          console.error(`[${getTimestamp()}] ⚠️  Customer confirmation email failed: ${customerEmailResult.error}`);
+        }
+      } catch (emailError) {
+        console.error(`[${getTimestamp()}] ❌ Exception sending customer confirmation:`, emailError.message);
+        console.error(`[${getTimestamp()}] 📄 Stack trace:`, emailError.stack);
+        // Ne pas faire échouer la commande si l'email échoue
       }
+    } else {
+      console.log(`[${getTimestamp()}] ⚠️  No customer email provided for order: ${orderNumber}`);
+    }
 
-      // 2. Notification à l'admin
-      console.log(`[${getTimestamp()}] 📧 Sending admin notification email...`);
-      await axios.post(`http://localhost:${PORT}/api/email/send-admin-notification`, {
-        orderDetails: orderDetailsForEmail
-      });
-      console.log(`[${getTimestamp()}] ✅ Admin notification email sent for order: ${orderNumber}`);
+    // 2. Notification à l'admin
+    try {
+      console.log(`[${getTimestamp()}] 📧 Attempting to send admin notification email...`);
+      const adminEmailResult = await emailService.sendAdminNotification(orderDetailsForEmail);
+      
+      if (adminEmailResult.success) {
+        console.log(`[${getTimestamp()}] ✅ Admin notification email sent successfully for order: ${orderNumber}`);
+        console.log(`[${getTimestamp()}] 📧 Message ID: ${adminEmailResult.messageId}`);
+      } else {
+        console.error(`[${getTimestamp()}] ⚠️  Admin notification email failed: ${adminEmailResult.error}`);
+      }
     } catch (emailError) {
-      console.error(`[${getTimestamp()}] ⚠️  Error sending notification emails:`, emailError.message);
-      console.error(`[${getTimestamp()}] 📄 Email error details:`, emailError);
-      // Ne pas faire échouer la commande si les emails échouent
+      console.error(`[${getTimestamp()}] ❌ Exception sending admin notification:`, emailError.message);
+      console.error(`[${getTimestamp()}] 📄 Stack trace:`, emailError.stack);
+      // Ne pas faire échouer la commande si l'email échoue
     }
 
     console.log(`[${getTimestamp()}] 🎉 Order creation completed successfully`);
