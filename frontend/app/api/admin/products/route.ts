@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { validateAdminRequest, logAuthAttempt, getValidatedUser } from '@/app/lib/jwtValidation';
+import { formatSupabaseError, isPermissionError, logPermissionError } from '@/app/lib/supabaseErrorHandler';
 
 // Créer un client Supabase avec la clé service pour les opérations admin
 const getSupabaseAdmin = () => {
@@ -100,12 +101,18 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('❌ Supabase error:', error);
+      
+      // Détecter et logger les erreurs de permissions
+      if (isPermissionError(error)) {
+        logPermissionError(error, 'fetch products', {
+          user: user?.id,
+          table: 'products'
+        });
+      }
+      
+      const formattedError = formatSupabaseError(error, 'fetch products');
       return NextResponse.json({
-        success: false,
-        error: {
-          code: 'DATABASE_ERROR',
-          message: error.message
-        },
+        ...formattedError,
         products: []
       }, { status: 500 });
     }
@@ -262,18 +269,16 @@ export async function POST(request: NextRequest) {
         hint: error.hint
       });
       
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: 'DATABASE_ERROR',
-            message: `Failed to create product: ${error.message}`,
-            details: error.details,
-            timestamp: new Date().toISOString()
-          }
-        },
-        { status: 500 }
-      );
+      // Détecter et logger les erreurs de permissions
+      if (isPermissionError(error)) {
+        logPermissionError(error, 'create product', {
+          user: user?.id,
+          table: 'products'
+        });
+      }
+      
+      const formattedError = formatSupabaseError(error, 'create product');
+      return NextResponse.json(formattedError, { status: 500 });
     }
 
     const duration = Date.now() - startTime;

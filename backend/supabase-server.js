@@ -4,6 +4,11 @@ const cors = require('cors');
 const bcrypt = require('bcrypt');
 const jwt = require('jwt-simple');
 const { createClient } = require('@supabase/supabase-js');
+const { 
+  formatErrorMessage, 
+  logPermissionError, 
+  isPermissionError 
+} = require('./supabaseErrorHandler');
 
 const app = express();
 const PORT = 3001;
@@ -175,10 +180,16 @@ app.post('/api/orders', async (req, res) => {
 
     if (orderError) {
       console.error('❌ Error creating order:', orderError);
-      return res.status(500).json({
-        success: false,
-        error: { message: 'Failed to create order' }
-      });
+      
+      // Utiliser le gestionnaire d'erreurs pour détecter les erreurs de permissions
+      if (isPermissionError(orderError)) {
+        logPermissionError(orderError, 'create order', {
+          table: 'orders'
+        });
+      }
+      
+      const formattedError = formatErrorMessage(orderError, 'create order');
+      return res.status(500).json(formattedError);
     }
 
     // Créer les items de commande
@@ -506,10 +517,17 @@ app.put('/api/admin/products/:id', authenticateToken, async (req, res) => {
 
     if (error) {
       console.error('❌ Error updating product:', error);
-      return res.status(500).json({
-        success: false,
-        error: { message: 'Failed to update product' }
-      });
+      
+      // Utiliser le gestionnaire d'erreurs pour détecter les erreurs de permissions
+      if (isPermissionError(error)) {
+        logPermissionError(error, 'update product', {
+          user: req.user?.username,
+          table: 'products'
+        });
+      }
+      
+      const formattedError = formatErrorMessage(error, 'update product');
+      return res.status(500).json(formattedError);
     }
 
     console.log('✅ Product updated successfully');
@@ -594,14 +612,17 @@ app.post('/api/admin/products', authenticateToken, async (req, res) => {
 
     if (error) {
       console.error('❌ Supabase error creating product:', error);
-      return res.status(500).json({
-        success: false,
-        error: { 
-          message: `Erreur Supabase: ${error.message}`,
-          details: error.details,
-          hint: error.hint
-        }
-      });
+      
+      // Utiliser le gestionnaire d'erreurs pour détecter les erreurs de permissions
+      if (isPermissionError(error)) {
+        logPermissionError(error, 'create product', {
+          user: req.user?.username,
+          table: 'products'
+        });
+      }
+      
+      const formattedError = formatErrorMessage(error, 'create product');
+      return res.status(500).json(formattedError);
     }
 
     console.log('✅ Product created successfully:', data.id);
