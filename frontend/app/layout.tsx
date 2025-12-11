@@ -6,23 +6,9 @@ import { AuthProvider } from "./context/AuthContext";
 import CartSyncManager from "./components/CartSyncManager";
 import PushNotificationPrompt from "./components/PushNotificationPrompt";
 
-// Try to load Google Fonts, but don't fail if unavailable
-let geistSans: any = { variable: "--font-geist-sans" };
-let geistMono: any = { variable: "--font-geist-mono" };
-
-try {
-  const { Geist, Geist_Mono } = require("next/font/google");
-  geistSans = Geist({
-    variable: "--font-geist-sans",
-    subsets: ["latin"],
-  });
-  geistMono = Geist_Mono({
-    variable: "--font-geist-mono",
-    subsets: ["latin"],
-  });
-} catch (error) {
-  console.warn("Failed to load Google Fonts, using system fonts fallback");
-}
+// Use system fonts fallback to avoid Google Fonts loading issues
+const geistSans = { variable: "--font-geist-sans" };
+const geistMono = { variable: "--font-geist-mono" };
 
 export const metadata: Metadata = {
   title: "Grandson Project - Streetwear Guinéen Premium | Mode Urbaine",
