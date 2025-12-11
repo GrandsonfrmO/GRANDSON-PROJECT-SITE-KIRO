@@ -4,6 +4,7 @@ import { useState, FormEvent, ChangeEvent } from 'react';
 import { Product } from '../../types';
 import ImageUpload from '../admin/ImageUpload';
 import ColorSelector from '../admin/ColorSelector';
+import { authStorage } from '@/app/lib/authStorage';
 
 interface ProductFormProps {
   product: Product | null;
@@ -107,7 +108,12 @@ export default function ProductForm({ product, onSuccess, onCancel }: ProductFor
         colors,
       };
 
-      const token = localStorage.getItem('adminToken');
+      const token = authStorage.getToken();
+      if (!token) {
+        setError('Session expirée, veuillez vous reconnecter');
+        setLoading(false);
+        return;
+      }
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,

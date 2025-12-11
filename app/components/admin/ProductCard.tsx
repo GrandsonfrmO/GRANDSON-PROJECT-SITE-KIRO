@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Product } from '../../types';
+import { authStorage } from '@/app/lib/authStorage';
 
 interface ProductCardProps {
   product: Product;
@@ -24,7 +25,11 @@ export default function ProductCard({ product, onUpdate }: ProductCardProps) {
   const handleToggleStatus = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = authStorage.getToken();
+      if (!token) {
+        alert('Session expirée, veuillez vous reconnecter');
+        return;
+      }
       const response = await fetch(`/api/admin/products/${product.id}`, {
         method: 'PUT',
         headers: {
@@ -54,7 +59,11 @@ export default function ProductCard({ product, onUpdate }: ProductCardProps) {
     if (confirm(`Êtes-vous sûr de vouloir supprimer "${product.name}" ?`)) {
       setIsLoading(true);
       try {
-        const token = localStorage.getItem('adminToken');
+        const token = authStorage.getToken();
+        if (!token) {
+          alert('Session expirée, veuillez vous reconnecter');
+          return;
+        }
         const response = await fetch(`/api/admin/products/${product.id}`, {
           method: 'DELETE',
           headers: {

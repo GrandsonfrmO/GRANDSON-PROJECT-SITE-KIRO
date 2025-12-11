@@ -11,6 +11,7 @@ import { Product } from '../../types';
 import ProductForm from '../../components/admin/ProductForm';
 import { getImageUrl } from '../../lib/imageOptimization';
 import { transformProducts } from '../../lib/dataTransform';
+import { authStorage } from '@/app/lib/authStorage';
 
 export default function ProductManagement() {
   const router = useRouter();
@@ -27,10 +28,17 @@ export default function ProductManagement() {
   const fetchProducts = async () => {
     try {
       setLoading(true);
+      const token = authStorage.getToken();
+      if (!token) {
+        console.error('No auth token found');
+        setProducts([]);
+        setLoading(false);
+        return;
+      }
       // Utiliser l'API Next.js directement au lieu du backend
       const response = await fetch('/api/admin/products', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+          'Authorization': `Bearer ${token}`
         }
       });
       const data = await response.json();
@@ -94,10 +102,15 @@ export default function ProductManagement() {
 
   const handleDelete = async (productId: string) => {
     try {
+      const token = authStorage.getToken();
+      if (!token) {
+        alert('Session expirée, veuillez vous reconnecter');
+        return;
+      }
       const response = await fetch(`/api/admin/products/${productId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+          'Authorization': `Bearer ${token}`
         }
       });
       const data = await response.json();
