@@ -2,7 +2,7 @@
   "version": 2,
   "framework": "nextjs",
   "regions": ["cdg1"],
-  "buildCommand": "bash build.sh",
+  "buildCommand": "npm run build",
   "outputDirectory": "frontend/.next",
-  "installCommand": "cd frontend && npm install"
+  "installCommand": "npm install && cd frontend && npm install"
 }
