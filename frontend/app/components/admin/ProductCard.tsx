@@ -27,7 +27,7 @@ export default function ProductCard({ product, onUpdate, onEdit }: ProductCardPr
     setIsLoading(true);
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`/api/products/${product.id}`, {
+      const response = await fetch(`/api/admin/products/${product.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -57,7 +57,7 @@ export default function ProductCard({ product, onUpdate, onEdit }: ProductCardPr
       setIsLoading(true);
       try {
         const token = localStorage.getItem('adminToken');
-        const response = await fetch(`/api/products/${product.id}`, {
+        const response = await fetch(`/api/admin/products/${product.id}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`,

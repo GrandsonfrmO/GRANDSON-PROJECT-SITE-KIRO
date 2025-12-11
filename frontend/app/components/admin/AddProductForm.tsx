@@ -222,7 +222,7 @@ export default function AddProductForm({ onProductCreated, onCancel }: AddProduc
         return;
       }
 
-      const response = await fetch('/api/products', {
+      const response = await fetch('/api/admin/products', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
