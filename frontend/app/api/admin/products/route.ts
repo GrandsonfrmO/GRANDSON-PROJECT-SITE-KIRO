@@ -259,7 +259,8 @@ export async function POST(request: NextRequest) {
       category: productData.category,
       imageCount: productData.images.length,
       sizes: productData.sizes,
-      colors: productData.colors
+      colors: productData.colors,
+      is_active: productData.is_active
     });
 
     const { data: product, error } = await supabase
