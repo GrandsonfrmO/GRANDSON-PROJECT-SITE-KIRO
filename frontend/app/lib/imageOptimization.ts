@@ -135,7 +135,11 @@ export function getImageUrl(imagePath: string, size: ImageSize = 'card'): string
     if (imagePath.includes('cloudinary.com')) {
       return optimizeCloudinaryUrl(imagePath, size);
     }
-    // Return other URLs as-is (Supabase storage, etc.)
+    // Return Supabase URLs as-is (they're already optimized)
+    if (imagePath.includes('supabase.co')) {
+      return imagePath;
+    }
+    // Return other URLs as-is
     return imagePath;
   }
 
