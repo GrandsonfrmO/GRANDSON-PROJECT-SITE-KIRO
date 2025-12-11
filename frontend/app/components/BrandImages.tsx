@@ -23,6 +23,7 @@ export default function BrandImages({ className = '', images }: BrandImagesProps
   const isMobile = useIsMobile();
   const [brandImages, setBrandImages] = useState<BrandImageData[]>(defaultBrandImages);
   const [imageErrors, setImageErrors] = useState<Set<number>>(new Set());
+  const [selectedImageId, setSelectedImageId] = useState<number | null>(null);
 
   useEffect(() => {
     if (images && images.length > 0) {
@@ -33,6 +34,20 @@ export default function BrandImages({ className = '', images }: BrandImagesProps
   const handleImageError = (imageId: number) => {
     console.error(`Failed to load brand image: ${imageId}`);
     setImageErrors(prev => new Set(prev).add(imageId));
+  };
+
+  const handleImageClick = (imageId: number) => {
+    setSelectedImageId(imageId);
+  };
+
+  const closeModal = () => {
+    setSelectedImageId(null);
+  };
+
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      closeModal();
+    }
   };
 
   // Check for reduced motion preference
@@ -62,6 +77,7 @@ export default function BrandImages({ className = '', images }: BrandImagesProps
         return (
           <div
             key={image.id}
+            onClick={() => handleImageClick(image.id)}
             className={`
               relative
               aspect-square
@@ -74,6 +90,7 @@ export default function BrandImages({ className = '', images }: BrandImagesProps
               transition-all duration-300
               group
               overflow-hidden
+              cursor-pointer
               ${isMobile ? 'active:scale-95 hover:border-accent/50' : 'hover:border-accent/50 hover:scale-105'}
             `}
             style={{ 
@@ -105,6 +122,55 @@ export default function BrandImages({ className = '', images }: BrandImagesProps
           </div>
         );
       })}
+
+      {/* Modal Gallery */}
+      {selectedImageId !== null && (
+        <div
+          onClick={handleBackdropClick}
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100000] flex items-center justify-center p-4 animate-fadeIn"
+        >
+          <div className="relative max-w-4xl w-full max-h-[90vh] flex flex-col">
+            {/* Close button */}
+            <button
+              onClick={closeModal}
+              className="absolute -top-12 right-0 text-white/70 hover:text-white transition-colors z-[100001]"
+              aria-label="Fermer la galerie"
+            >
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Image container */}
+            <div className="relative w-full h-full flex items-center justify-center bg-gradient-to-b from-white/5 to-transparent rounded-2xl border border-white/10 overflow-hidden">
+              {brandImages.map((img) => (
+                <div
+                  key={img.id}
+                  className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${
+                    img.id === selectedImageId ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                  }`}
+                >
+                  <Image
+                    src={img.src}
+                    alt={img.alt}
+                    fill
+                    className="object-contain p-8"
+                    priority
+                    onError={() => handleImageError(img.id)}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Image info */}
+            <div className="mt-4 text-center">
+              <p className="text-white/70 text-sm">
+                {brandImages.find(img => img.id === selectedImageId)?.alt}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
