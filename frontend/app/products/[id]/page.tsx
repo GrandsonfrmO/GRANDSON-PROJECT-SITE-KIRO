@@ -109,22 +109,23 @@ export default function ProductDetailPage() {
       : undefined;
 
     // Show success message with product details
-    toast.success(
-      '✨ Produit ajouté !',
-      `${quantity}x ${product.name} ${selectedSize ? `(${selectedSize})` : ''} ${selectedColor ? `- ${selectedColor}` : ''}`,
-      5000,
-      {
+    toast.addToast({
+      type: 'success',
+      title: '✨ Produit ajouté !',
+      message: `${quantity}x ${product.name} ${selectedSize ? `(${selectedSize})` : ''} ${selectedColor ? `- ${selectedColor}` : ''}`,
+      duration: 5000,
+      action: {
         label: 'Voir le panier',
         onClick: () => {
-          // Trigger cart opening - you might need to adjust this based on your cart implementation
+          // Trigger cart opening
           const cartButton = document.querySelector('[data-cart-trigger]');
           if (cartButton) {
             (cartButton as HTMLButtonElement).click();
           }
         }
       },
-      productImage
-    );
+      image: productImage
+    });
   };
 
   if (loading) {
