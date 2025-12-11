@@ -1,21 +1,9 @@
 'use client';
 
 import { useEffect } from 'react';
-import { reportWebVitals } from '../lib/seoPerformance';
 
 export function SEOAnalytics() {
   useEffect(() => {
-    // Track Web Vitals
-    if (typeof window !== 'undefined' && 'web-vital' in window) {
-      import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {
-        getCLS(reportWebVitals);
-        getFID(reportWebVitals);
-        getFCP(reportWebVitals);
-        getLCP(reportWebVitals);
-        getTTFB(reportWebVitals);
-      });
-    }
-
     // Track page view
     if (typeof window !== 'undefined' && window.gtag) {
       window.gtag('event', 'page_view', {

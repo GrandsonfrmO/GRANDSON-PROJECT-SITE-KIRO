@@ -21,13 +21,15 @@ export function generateSEOMetadata(props: SEOHeadProps): Metadata {
     author = 'Grandson Project',
   } = props;
 
+  const ogType = type === 'product' ? 'website' : type;
+
   return {
     title: `${title} | Grandson Project`,
     description,
     keywords,
     authors: [{ name: author }],
     openGraph: {
-      type,
+      type: ogType,
       locale: 'fr_GN',
       url,
       title,
