@@ -8,9 +8,9 @@ const supabase = createClient(
 
 // Default brand images
 const defaultBrandImages = {
-  brandImage1: '/images/brand/grandson-ent-logo.png',
-  brandImage2: '/images/brand/made-in-guinea-label.png',
-  brandImage3: '/images/brand/horse-mascot.png'
+  brandImage1: '/images/brand/grandson-ent-logo.svg',
+  brandImage2: '/images/brand/made-in-guinea-label.svg',
+  brandImage3: '/images/brand/horse-mascot.svg'
 };
 
 // GET /api/admin/brand-images - Fetch brand images

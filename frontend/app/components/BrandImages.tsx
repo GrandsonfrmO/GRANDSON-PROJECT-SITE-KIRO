@@ -59,6 +59,7 @@ export default function BrandImages({ className = '', images }: BrandImagesProps
 
   // Don't render anything if no images are available
   if (brandImages.length === 0) {
+    console.warn('BrandImages: No images provided');
     return null;
   }
 
@@ -142,24 +143,48 @@ export default function BrandImages({ className = '', images }: BrandImagesProps
             </button>
 
             {/* Image container */}
-            <div className="relative w-full h-full flex items-center justify-center bg-gradient-to-b from-white/5 to-transparent rounded-2xl border border-white/10 overflow-hidden">
-              {brandImages.map((img) => (
-                <div
-                  key={img.id}
-                  className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${
-                    img.id === selectedImageId ? 'opacity-100' : 'opacity-0 pointer-events-none'
-                  }`}
-                >
-                  <Image
-                    src={img.src}
-                    alt={img.alt}
-                    fill
-                    className="object-contain p-8"
-                    priority
-                    onError={() => handleImageError(img.id)}
-                  />
+            <div className="relative w-full h-[60vh] flex items-center justify-center bg-gradient-to-b from-white/5 to-transparent rounded-2xl border border-white/10 overflow-hidden">
+              {brandImages.length === 0 ? (
+                <div className="text-center text-white/50">
+                  <p>Aucune image disponible</p>
                 </div>
-              ))}
+              ) : (
+                brandImages.map((img) => {
+                  const isSelected = img.id === selectedImageId;
+                  const hasError = imageErrors.has(img.id);
+                  
+                  return (
+                    <div
+                      key={img.id}
+                      className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${
+                        isSelected ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none'
+                      }`}
+                    >
+                      {hasError ? (
+                        <div className="text-center text-white/50">
+                          <p>Erreur de chargement</p>
+                          <p className="text-xs mt-2">{img.src}</p>
+                        </div>
+                      ) : (
+                        <div className="relative w-full h-full flex items-center justify-center p-8">
+                          <Image
+                            src={img.src}
+                            alt={img.alt}
+                            fill
+                            className="object-contain"
+                            priority={isSelected}
+                            onError={() => {
+                              console.error(`Failed to load image: ${img.src}`);
+                              handleImageError(img.id);
+                            }}
+                            sizes="(max-width: 768px) 100vw, 90vw"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
             </div>
 
             {/* Image info */}
