@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { Product } from '@/app/types';
 import Layout from '@/app/components/Layout';
 import { useCart } from '@/app/context/CartContext';
+import { useToastContext } from '@/app/context/ToastContext';
 import { transformProduct } from '@/app/lib/dataTransform';
 import { getImageUrl } from '@/app/lib/imageOptimization';
 
@@ -22,6 +23,7 @@ export default function ProductDetailPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const router = useRouter();
   const { addToCart } = useCart();
+  const toast = useToastContext();
 
   // Preload adjacent images when selectedImage changes
   useEffect(() => {
@@ -85,24 +87,44 @@ export default function ProductDetailPage() {
     if (!product) return;
 
     if (product.stock === 0) {
-      alert('Ce produit est en rupture de stock');
+      toast.error('Rupture de stock', 'Ce produit n\'est pas disponible pour le moment');
       return;
     }
 
     if (product.sizes && product.sizes.length > 0 && !selectedSize) {
-      alert('Veuillez sélectionner une taille');
+      toast.warning('Taille requise', 'Veuillez sélectionner une taille');
       return;
     }
 
     if (product.colors && product.colors.length > 0 && !selectedColor) {
-      alert('Veuillez sélectionner une couleur');
+      toast.warning('Couleur requise', 'Veuillez sélectionner une couleur');
       return;
     }
 
     addToCart(product, selectedSize, quantity, selectedColor);
 
-    // Show success message
-    alert(`✅ ${product.name} ajouté au panier !`);
+    // Get product image for toast
+    const productImage = product.images && product.images.length > 0 
+      ? getImageUrl(product.images[0], 'thumbnail')
+      : undefined;
+
+    // Show success message with product details
+    toast.success(
+      '✨ Produit ajouté !',
+      `${quantity}x ${product.name} ${selectedSize ? `(${selectedSize})` : ''} ${selectedColor ? `- ${selectedColor}` : ''}`,
+      5000,
+      {
+        label: 'Voir le panier',
+        onClick: () => {
+          // Trigger cart opening - you might need to adjust this based on your cart implementation
+          const cartButton = document.querySelector('[data-cart-trigger]');
+          if (cartButton) {
+            (cartButton as HTMLButtonElement).click();
+          }
+        }
+      },
+      productImage
+    );
   };
 
   if (loading) {

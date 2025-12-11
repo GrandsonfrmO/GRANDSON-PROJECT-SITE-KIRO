@@ -119,6 +119,7 @@ export default function Header() {
               {/* Cart Icon - Touch Optimized */}
               <button 
                 onClick={() => setCartOpen(true)}
+                data-cart-trigger
                 className="relative p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-neutral-800 rounded-xl transition-all duration-150 active:scale-95 border-2 border-transparent hover:border-accent"
                 aria-label="Panier"
               >

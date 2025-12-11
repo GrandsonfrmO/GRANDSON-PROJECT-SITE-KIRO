@@ -8,6 +8,11 @@ export interface ToastOptions {
   title: string;
   message?: string;
   duration?: number;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
+  image?: string;
 }
 
 export function useToast() {
@@ -29,20 +34,20 @@ export function useToast() {
     setToasts(prev => prev.filter(toast => toast.id !== id));
   }, []);
 
-  const success = useCallback((title: string, message?: string, duration?: number) => {
-    return addToast({ type: 'success', title, message, duration });
+  const success = useCallback((title: string, message?: string, duration?: number, action?: ToastOptions['action'], image?: string) => {
+    return addToast({ type: 'success', title, message, duration, action, image });
   }, [addToast]);
 
-  const error = useCallback((title: string, message?: string, duration?: number) => {
-    return addToast({ type: 'error', title, message, duration });
+  const error = useCallback((title: string, message?: string, duration?: number, action?: ToastOptions['action'], image?: string) => {
+    return addToast({ type: 'error', title, message, duration, action, image });
   }, [addToast]);
 
-  const warning = useCallback((title: string, message?: string, duration?: number) => {
-    return addToast({ type: 'warning', title, message, duration });
+  const warning = useCallback((title: string, message?: string, duration?: number, action?: ToastOptions['action'], image?: string) => {
+    return addToast({ type: 'warning', title, message, duration, action, image });
   }, [addToast]);
 
-  const info = useCallback((title: string, message?: string, duration?: number) => {
-    return addToast({ type: 'info', title, message, duration });
+  const info = useCallback((title: string, message?: string, duration?: number, action?: ToastOptions['action'], image?: string) => {
+    return addToast({ type: 'info', title, message, duration, action, image });
   }, [addToast]);
 
   return {
