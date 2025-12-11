@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, ChangeEvent } from 'react';
-import api from '../../lib/api';
 
 interface ImageUploadProps {
   images: string[];
@@ -41,23 +40,39 @@ export default function ImageUpload({ images, onChange }: ImageUploadProps) {
     try {
       console.log('📤 Upload de', files.length, 'fichier(s)');
       
-      const formData = new FormData();
-      Array.from(files).forEach((file) => {
+      const uploadedUrls: string[] = [];
+      
+      // Upload each file individually
+      for (const file of Array.from(files)) {
         console.log('  📎', file.name, '-', (file.size / 1024).toFixed(2), 'KB');
-        formData.append('images', file);
-      });
+        
+        const formData = new FormData();
+        formData.append('image', file);
 
-      console.log('🚀 Envoi de la requête...');
-      const response = await api.upload('/api/admin/upload', formData);
-      console.log('📦 Réponse reçue:', response);
+        console.log('🚀 Envoi de la requête pour', file.name);
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
 
-      if (response.success && response.filePaths) {
-        console.log('✅ Upload réussi:', response.filePaths);
-        onChange([...images, ...response.filePaths]);
-      } else {
-        console.error('❌ Réponse invalide:', response);
-        throw new Error(response.message || 'Échec du téléchargement');
+        if (!response.ok) {
+          throw new Error(`Erreur upload ${file.name}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('📦 Réponse reçue:', data);
+
+        if (data.success && data.data?.url) {
+          console.log('✅ Upload réussi:', data.data.url);
+          uploadedUrls.push(data.data.url);
+        } else {
+          console.error('❌ Réponse invalide:', data);
+          throw new Error(data.error?.message || 'Échec du téléchargement');
+        }
       }
+      
+      // Add all uploaded URLs to the images list
+      onChange([...images, ...uploadedUrls]);
     } catch (err) {
       const error = err as Error;
       console.error('❌ Erreur upload:', error);
@@ -130,43 +145,66 @@ export default function ImageUpload({ images, onChange }: ImageUploadProps) {
       {/* Image Preview Grid */}
       {images.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {images.map((image, index) => (
-            <div
-              key={index}
-              className="relative group aspect-square bg-neutral-900 rounded-lg overflow-hidden border border-neutral-700"
-            >
-              <img
-                src={image.startsWith('http') ? image : `http://localhost:3001${image}`}
-                alt={`Product ${index + 1}`}
-                className="w-full h-full object-cover"
-              />
-              <button
-                type="button"
-                onClick={() => handleRemove(index)}
-                className="absolute top-2 right-2 p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                title="Supprimer"
+          {images.map((image, index) => {
+            // Déterminer l'URL correcte de l'image
+            let imageUrl = image;
+            
+            // Si c'est une URL complète (http/https), l'utiliser directement
+            if (image.startsWith('http://') || image.startsWith('https://')) {
+              imageUrl = image;
+            }
+            // Si c'est un chemin relatif, ajouter le préfixe localhost
+            else if (image.startsWith('/')) {
+              imageUrl = `http://localhost:3001${image}`;
+            }
+            // Sinon, c'est probablement une URL Supabase ou autre, l'utiliser directement
+            else {
+              imageUrl = image;
+            }
+            
+            return (
+              <div
+                key={index}
+                className="relative group aspect-square bg-neutral-900 rounded-lg overflow-hidden border border-neutral-700"
               >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+                <img
+                  src={imageUrl}
+                  alt={`Product ${index + 1}`}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    // Si l'image ne charge pas, afficher un placeholder
+                    const img = e.target as HTMLImageElement;
+                    img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23374151" width="100" height="100"/%3E%3Ctext x="50" y="50" font-size="12" fill="%239CA3AF" text-anchor="middle" dominant-baseline="middle"%3EImage non disponible%3C/text%3E%3C/svg%3E';
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRemove(index)}
+                  className="absolute top-2 right-2 p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="Supprimer"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-              {index === 0 && (
-                <div className="absolute bottom-2 left-2 px-2 py-1 bg-accent text-white text-xs font-semibold rounded">
-                  Principal
-                </div>
-              )}
-            </div>
-          ))}
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+                {index === 0 && (
+                  <div className="absolute bottom-2 left-2 px-2 py-1 bg-accent text-white text-xs font-semibold rounded">
+                    Principal
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
