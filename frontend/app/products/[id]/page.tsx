@@ -23,7 +23,15 @@ export default function ProductDetailPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const router = useRouter();
   const { addToCart } = useCart();
-  const toast = useToastContext();
+  
+  // Safely get toast context
+  let toast;
+  try {
+    toast = useToastContext();
+  } catch (e) {
+    // Fallback if context is not available
+    toast = null;
+  }
 
   // Preload adjacent images when selectedImage changes
   useEffect(() => {
@@ -87,17 +95,29 @@ export default function ProductDetailPage() {
     if (!product) return;
 
     if (product.stock === 0) {
-      toast.error('Rupture de stock', 'Ce produit n\'est pas disponible pour le moment');
+      if (toast) {
+        toast.error('Rupture de stock', 'Ce produit n\'est pas disponible pour le moment');
+      } else {
+        alert('Rupture de stock');
+      }
       return;
     }
 
     if (product.sizes && product.sizes.length > 0 && !selectedSize) {
-      toast.warning('Taille requise', 'Veuillez sélectionner une taille');
+      if (toast) {
+        toast.warning('Taille requise', 'Veuillez sélectionner une taille');
+      } else {
+        alert('Veuillez sélectionner une taille');
+      }
       return;
     }
 
     if (product.colors && product.colors.length > 0 && !selectedColor) {
-      toast.warning('Couleur requise', 'Veuillez sélectionner une couleur');
+      if (toast) {
+        toast.warning('Couleur requise', 'Veuillez sélectionner une couleur');
+      } else {
+        alert('Veuillez sélectionner une couleur');
+      }
       return;
     }
 
@@ -109,23 +129,27 @@ export default function ProductDetailPage() {
       : undefined;
 
     // Show success message with product details
-    toast.addToast({
-      type: 'success',
-      title: '✨ Produit ajouté !',
-      message: `${quantity}x ${product.name} ${selectedSize ? `(${selectedSize})` : ''} ${selectedColor ? `- ${selectedColor}` : ''}`,
-      duration: 5000,
-      action: {
-        label: 'Voir le panier',
-        onClick: () => {
-          // Trigger cart opening
-          const cartButton = document.querySelector('[data-cart-trigger]');
-          if (cartButton) {
-            (cartButton as HTMLButtonElement).click();
+    if (toast) {
+      toast.addToast({
+        type: 'success',
+        title: '✨ Produit ajouté !',
+        message: `${quantity}x ${product.name} ${selectedSize ? `(${selectedSize})` : ''} ${selectedColor ? `- ${selectedColor}` : ''}`,
+        duration: 5000,
+        action: {
+          label: 'Voir le panier',
+          onClick: () => {
+            // Trigger cart opening
+            const cartButton = document.querySelector('[data-cart-trigger]');
+            if (cartButton) {
+              (cartButton as HTMLButtonElement).click();
+            }
           }
-        }
-      },
-      image: productImage
-    });
+        },
+        image: productImage
+      });
+    } else {
+      alert(`✅ ${product.name} ajouté au panier !`);
+    }
   };
 
   if (loading) {
