@@ -1,11 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { useInteractiveButton } from '../hooks/useHapticFeedback';
 
 export default function CustomizationBanner() {
   const isMobile = useIsMobile();
   const { handlePress } = useInteractiveButton();
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
   const whatsappLink = `https://wa.me/224662662958`;
 
@@ -16,7 +18,18 @@ export default function CustomizationBanner() {
       price: '80-120K',
       description: 'Coton premium',
       color: 'from-blue-500 to-blue-600',
-      lightColor: 'from-blue-500/20 to-blue-600/20'
+      lightColor: 'from-blue-500/20 to-blue-600/20',
+      details: {
+        description: 'T-shirts personnalisés en coton premium 100% confortable',
+        features: [
+          'Coton premium haute qualité',
+          'Impression couleur ou DTF',
+          'Tailles XS à 5XL',
+          'Lavable à 40°C',
+          'Séchage rapide'
+        ],
+        process: 'Design → Validation → Impression → Contrôle qualité → Livraison'
+      }
     },
     { 
       icon: '🎸', 
@@ -24,7 +37,18 @@ export default function CustomizationBanner() {
       price: '120K',
       description: 'Édition limitée',
       color: 'from-purple-500 to-purple-600',
-      lightColor: 'from-purple-500/20 to-purple-600/20'
+      lightColor: 'from-purple-500/20 to-purple-600/20',
+      details: {
+        description: 'T-shirts bootleg vintage avec designs exclusifs',
+        features: [
+          'Designs exclusifs et uniques',
+          'Édition limitée',
+          'Coton vintage',
+          'Impression haute définition',
+          'Certificat d\'authenticité'
+        ],
+        process: 'Création design → Approbation → Production limitée → Certification'
+      }
     },
     { 
       icon: '🧥', 
@@ -32,7 +56,18 @@ export default function CustomizationBanner() {
       price: '180-220K',
       description: 'Tricot premium',
       color: 'from-orange-500 to-orange-600',
-      lightColor: 'from-orange-500/20 to-orange-600/20'
+      lightColor: 'from-orange-500/20 to-orange-600/20',
+      details: {
+        description: 'Pulls personnalisés en tricot premium confortable',
+        features: [
+          'Tricot premium 100% coton',
+          'Broderie ou impression',
+          'Tailles XS à 5XL',
+          'Doublure intérieure douce',
+          'Résistant au lavage'
+        ],
+        process: 'Sélection tissu → Design → Tricotage → Personnalisation → Contrôle'
+      }
     },
     { 
       icon: '🏃', 
@@ -40,7 +75,18 @@ export default function CustomizationBanner() {
       price: '280-350K',
       description: 'Confort & style',
       color: 'from-red-500 to-red-600',
-      lightColor: 'from-red-500/20 to-red-600/20'
+      lightColor: 'from-red-500/20 to-red-600/20',
+      details: {
+        description: 'Survêtements personnalisés pour le confort et le style',
+        features: [
+          'Tissu polyester premium',
+          'Pantalon + Veste assortis',
+          'Poches renforcées',
+          'Ceinture élastique confortable',
+          'Designs personnalisés'
+        ],
+        process: 'Choix couleur → Design → Confection → Assemblage → Livraison'
+      }
     },
     { 
       icon: '🧢', 
@@ -48,7 +94,18 @@ export default function CustomizationBanner() {
       price: '80K+',
       description: 'Finitions premium',
       color: 'from-green-500 to-green-600',
-      lightColor: 'from-green-500/20 to-green-600/20'
+      lightColor: 'from-green-500/20 to-green-600/20',
+      details: {
+        description: 'Accessoires personnalisés pour compléter votre style',
+        features: [
+          'Casquettes, bonnets, sacs',
+          'Broderie ou impression',
+          'Matériaux premium',
+          'Designs personnalisés',
+          'Livraison rapide'
+        ],
+        process: 'Sélection article → Design → Personnalisation → Contrôle → Livraison'
+      }
     },
   ];
 
@@ -126,7 +183,8 @@ export default function CustomizationBanner() {
             {products.map((item, i) => (
               <div
                 key={i}
-                className={`group relative bg-gradient-to-br ${item.lightColor} backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden transition-all duration-500 ${
+                onClick={() => setSelectedProduct(item)}
+                className={`group relative bg-gradient-to-br ${item.lightColor} backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden transition-all duration-500 cursor-pointer ${
                   isMobile 
                     ? 'p-4 active:scale-95' 
                     : 'p-6 hover:scale-110 hover:border-white/30 hover:shadow-2xl hover:shadow-accent/30'
@@ -241,6 +299,117 @@ export default function CustomizationBanner() {
           </div>
         </div>
       </div>
+
+      {/* Product Details Modal */}
+      {selectedProduct && (
+        <div
+          onClick={() => setSelectedProduct(null)}
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100000] flex items-center justify-center p-4 animate-fadeIn"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className={`relative bg-gradient-to-br from-neutral-900 via-black to-neutral-900 rounded-3xl border border-white/10 overflow-hidden max-w-2xl w-full max-h-[90vh] overflow-y-auto ${
+              isMobile ? 'p-6' : 'p-8'
+            }`}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setSelectedProduct(null)}
+              className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors z-10"
+              aria-label="Fermer"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Header with icon and title */}
+            <div className="mb-6">
+              <div className={`inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br ${selectedProduct.lightColor} rounded-2xl mb-4 ${
+                isMobile ? 'text-4xl' : 'text-5xl'
+              }`}>
+                {selectedProduct.icon}
+              </div>
+              <h2 className={`font-black text-white mb-2 ${
+                isMobile ? 'text-2xl' : 'text-4xl'
+              }`}>
+                {selectedProduct.name}
+              </h2>
+              <p className="text-neutral-400 text-lg">
+                {selectedProduct.details.description}
+              </p>
+            </div>
+
+            {/* Price highlight */}
+            <div className={`bg-gradient-to-r ${selectedProduct.color} bg-clip-text text-transparent font-black mb-6 ${
+              isMobile ? 'text-2xl' : 'text-3xl'
+            }`}>
+              À partir de {selectedProduct.price}
+            </div>
+
+            {/* Features section */}
+            <div className="mb-8">
+              <h3 className="text-white font-bold text-lg mb-4 flex items-center gap-2">
+                <svg className="w-5 h-5 text-accent" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                Caractéristiques
+              </h3>
+              <ul className="space-y-3">
+                {selectedProduct.details.features.map((feature: string, idx: number) => (
+                  <li key={idx} className="flex items-start gap-3 text-neutral-300">
+                    <span className="text-accent mt-1">✓</span>
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Process section */}
+            <div className="mb-8 bg-white/5 border border-white/10 rounded-2xl p-4">
+              <h3 className="text-white font-bold text-lg mb-3 flex items-center gap-2">
+                <svg className="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8zm3.5-9c0 .828-.672 1.5-1.5 1.5S12.5 11.828 12.5 11V7c0-.828.672-1.5 1.5-1.5s1.5.672 1.5 1.5v4z" clipRule="evenodd" />
+                </svg>
+                Processus
+              </h3>
+              <p className="text-neutral-300 text-sm">
+                {selectedProduct.details.process}
+              </p>
+            </div>
+
+            {/* CTA Buttons */}
+            <div className={`flex gap-3 ${isMobile ? 'flex-col' : ''}`}>
+              <a
+                href={whatsappLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`group relative inline-flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 via-green-500 to-emerald-500 text-white rounded-xl font-bold transition-all duration-300 shadow-lg overflow-hidden border border-green-400/30 ${
+                  isMobile 
+                    ? 'px-6 py-3 text-sm flex-1' 
+                    : 'px-8 py-3 text-base hover:from-green-500 hover:via-green-400 hover:to-emerald-400 hover:shadow-xl hover:shadow-green-500/30 hover:scale-105'
+                }`}
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                </svg>
+                <span>Commander</span>
+              </a>
+              
+              <button
+                onClick={() => setSelectedProduct(null)}
+                className={`group inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold transition-all duration-300 border border-white/20 hover:border-accent/50 ${
+                  isMobile 
+                    ? 'px-6 py-3 text-sm flex-1' 
+                    : 'px-8 py-3 text-base hover:scale-105'
+                }`}
+              >
+                <span>Fermer</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
