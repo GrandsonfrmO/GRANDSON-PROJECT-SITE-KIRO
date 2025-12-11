@@ -45,9 +45,7 @@ export default function BrandImages({ className = '', images }: BrandImagesProps
   };
 
   const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      closeModal();
-    }
+    // Ne rien faire - le modal ne se ferme que via le bouton X
   };
 
   // Check for reduced motion preference
@@ -166,7 +164,7 @@ export default function BrandImages({ className = '', images }: BrandImagesProps
                           <p className="text-xs mt-2">{img.src}</p>
                         </div>
                       ) : (
-                        <div className="relative w-full h-full flex items-center justify-center p-8">
+                        <div className={`relative w-full h-full flex items-center justify-center p-8 ${animationClass}`}>
                           <Image
                             src={img.src}
                             alt={img.alt}
