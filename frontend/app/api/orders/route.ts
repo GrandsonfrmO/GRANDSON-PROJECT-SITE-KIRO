@@ -81,8 +81,10 @@ export async function POST(request: NextRequest) {
         // Trigger admin notification and emails
         console.log(`[${getTimestamp()}] 📢 Triggering notifications and emails...`);
         try {
+          const frontendUrl = process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000';
+          
           // Send admin notification
-          await fetch(`http://localhost:3000/api/push/send`, {
+          await fetch(`${frontendUrl}/api/push/send`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -97,7 +99,7 @@ export async function POST(request: NextRequest) {
 
           // Send customer confirmation email
           if (orderData?.customerEmail) {
-            await fetch(`http://localhost:3000/api/email/send-customer-confirmation`, {
+            await fetch(`${frontendUrl}/api/email/send-customer-confirmation`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -123,7 +125,7 @@ export async function POST(request: NextRequest) {
           }
 
           // Send admin notification email
-          await fetch(`http://localhost:3000/api/email/send-admin-notification`, {
+          await fetch(`${frontendUrl}/api/email/send-admin-notification`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
