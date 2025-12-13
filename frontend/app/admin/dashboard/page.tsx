@@ -194,6 +194,13 @@ export default function SuperAdminDashboard() {
     checkAuthAndLoadData();
   }, [router]);
 
+  // Recharge les données quand le tab change (pour les produits créés)
+  useEffect(() => {
+    if (activeTab === 'products' || activeTab === 'orders') {
+      loadDashboardData();
+    }
+  }, [activeTab]);
+
   const loadDashboardData = async () => {
     try {
       let productsData: Product[] = [];
@@ -211,8 +218,10 @@ export default function SuperAdminDashboard() {
         
         if (productsResponse.ok) {
           const data = await productsResponse.json();
-          productsData = data.data?.products || data.products || [];
+          // API returns { success: true, products: [...] }
+          productsData = data.products || data.data?.products || [];
           setProducts(productsData);
+          console.log('✅ Products loaded:', productsData.length);
         } else {
           throw new Error('Failed to fetch products');
         }
@@ -234,9 +243,11 @@ export default function SuperAdminDashboard() {
         
         if (ordersResponse.ok) {
           const data = await ordersResponse.json();
+          // API returns { success: true, data: { orders: [...] } }
           ordersData = data.data?.orders || data.orders || [];
           setOrders(ordersData);
           setRecentOrders(ordersData.slice(0, 4));
+          console.log('✅ Orders loaded:', ordersData.length);
         } else {
           throw new Error('Failed to fetch orders');
         }

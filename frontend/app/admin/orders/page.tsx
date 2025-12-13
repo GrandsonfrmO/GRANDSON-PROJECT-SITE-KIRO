@@ -35,9 +35,24 @@ export default function OrderManagement() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/api/admin/orders', true);
+      // Use authStorage to get token
+      const { authStorage } = await import('@/app/lib/authStorage');
+      const token = authStorage.getToken();
+      
+      const response = await fetch('/api/admin/orders', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch orders');
+      }
+      
+      const data = await response.json();
       // Handle response format: { success: true, data: { orders: [...] } }
-      const ordersList = response.data?.orders || response.orders || [];
+      const ordersList = data.data?.orders || data.orders || [];
       // Sort by most recent first
       const sortedOrders = ordersList.sort(
         (a: Order, b: Order) =>

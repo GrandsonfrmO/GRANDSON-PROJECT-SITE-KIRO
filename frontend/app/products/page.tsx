@@ -48,7 +48,7 @@ export default function ProductsPage() {
         }
         
         const response = await fetch('/api/products', {
-          next: { revalidate: 300 } // Revalidate every 5 minutes
+          cache: 'no-store' // Toujours récupérer les données fraîches
         });
         
         if (!response.ok) {
@@ -56,7 +56,7 @@ export default function ProductsPage() {
         }
         
         const data = await response.json();
-        const productsList = data.data?.products || data.products || [];
+        const productsList = data.products || data.data?.products || [];
         const transformedProducts = transformProducts(productsList);
         const activeProducts = transformedProducts.filter((p: Product) => p.isActive);
         

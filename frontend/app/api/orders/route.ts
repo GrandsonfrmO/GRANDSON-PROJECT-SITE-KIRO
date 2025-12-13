@@ -83,7 +83,33 @@ export async function POST(request: NextRequest) {
         try {
           const frontendUrl = process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000';
           
-          // Send admin notification
+          // Send admin notification via email (plus fiable que les push)
+          console.log(`[${getTimestamp()}] 📧 Sending admin notification email...`);
+          await fetch(`${frontendUrl}/api/email/send-admin-notification`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderDetails: {
+                orderNumber: orderNumber,
+                customerName: orderData.customerName,
+                customerEmail: orderData.customerEmail,
+                customerPhone: orderData.customerPhone,
+                deliveryAddress: orderData.deliveryAddress,
+                deliveryZone: orderData.deliveryZone,
+                deliveryFee: orderData.deliveryFee || 0,
+                total: orderData.totalAmount || orderData.total,
+                items: (orderData.items || []).map((item: any) => ({
+                  name: item.product?.name || item.name || 'Produit',
+                  image: item.product?.images?.[0] || item.image,
+                  size: item.size,
+                  quantity: item.quantity,
+                  price: item.price
+                }))
+              }
+            })
+          }).catch(err => console.warn('⚠️ Admin email notification failed:', err));
+          
+          // Also try push notification as backup
           await fetch(`${frontendUrl}/api/push/send`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

@@ -38,11 +38,20 @@ export default function ProductManagement() {
       // Utiliser l'API Next.js directement au lieu du backend
       const response = await fetch('/api/admin/products', {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        cache: 'no-store' // Toujours récupérer les données fraîches
       });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch products');
+      }
+      
       const data = await response.json();
       const productsList = data.products || data.data?.products || [];
+      console.log('✅ Products fetched:', productsList.length);
+      
       // Transformer les produits pour s'assurer que images/sizes sont des tableaux
       const transformedProducts = transformProducts(productsList);
       // Double vérification que tous les produits ont des tableaux valides
