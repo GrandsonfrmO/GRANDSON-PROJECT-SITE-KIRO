@@ -200,6 +200,16 @@ export default function CheckoutPage() {
         // Show warning if in demo mode
         if (data.warning) {
           console.warn('Demo mode warning:', data.warning.message);
+          // Save order data to localStorage for demo mode persistence
+          try {
+            localStorage.setItem(
+              `demo-order-${data.data.order.orderNumber}`,
+              JSON.stringify(data.data.order)
+            );
+            console.log('✅ Demo order saved to localStorage');
+          } catch (storageError) {
+            console.warn('⚠️ Could not save order to localStorage:', storageError);
+          }
         }
         clearCart();
         router.push(`/order-confirmation/${data.data.order.orderNumber}`);

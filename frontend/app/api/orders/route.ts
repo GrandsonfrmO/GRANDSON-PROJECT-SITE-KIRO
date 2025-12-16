@@ -8,6 +8,7 @@ import {
   validateOrderData,
 } from '@/app/lib/orderErrors';
 import { demoOrdersStore } from '@/app/lib/demoOrdersStore';
+import { saveOrderToSupabase, fetchOrderFromSupabase } from '@/app/lib/supabaseOrders';
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3001';
 
@@ -234,7 +235,32 @@ export async function POST(request: NextRequest) {
       console.log(`[${getTimestamp()}] 🔄 Activating demo mode`);
     }
     
-    // Mode démo si backend indisponible
+    // Try Supabase directly as fallback
+    console.log(`[${getTimestamp()}] 🔄 Attempting to save order directly to Supabase...`);
+    
+    try {
+      const supabaseResult = await saveOrderToSupabase({
+        customerName: body.customerName,
+        customerPhone: body.customerPhone,
+        customerEmail: body.customerEmail,
+        deliveryAddress: body.deliveryAddress,
+        deliveryZone: body.deliveryZone,
+        deliveryFee: parseFloat(body.deliveryFee) || 0,
+        totalAmount: parseFloat(body.totalAmount),
+        items: body.items
+      });
+      
+      console.log(`[${getTimestamp()}] ✅ Order saved to Supabase successfully`);
+      console.log(`[${getTimestamp()}] ⏱️  Total request duration: ${Date.now() - startTime}ms`);
+      console.log(`${'='.repeat(80)}\n`);
+      
+      return NextResponse.json(supabaseResult);
+    } catch (supabaseError) {
+      console.error(`[${getTimestamp()}] ❌ Supabase save failed:`, supabaseError);
+      console.log(`[${getTimestamp()}] 🎭 Falling back to demo mode`);
+    }
+    
+    // Mode démo si Supabase aussi échoue
     console.log(`[${getTimestamp()}] 🎭 DEMO MODE ACTIVATED`);
     console.log(`[${getTimestamp()}] 📋 Generating realistic demo order data...`);
     

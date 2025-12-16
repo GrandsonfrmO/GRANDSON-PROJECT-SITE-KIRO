@@ -1,0 +1,13 @@
+@echo off
+echo 🚀 Starting Full Development Environment...
+echo.
+echo Starting Backend on port 3001...
+start cmd /k "cd backend && npm run dev"
+echo.
+echo Starting Frontend on port 3000...
+start cmd /k "cd frontend && npm run dev"
+echo.
+echo ✅ Both servers are starting...
+echo Frontend: http://localhost:3000
+echo Backend: http://localhost:3001
+pause

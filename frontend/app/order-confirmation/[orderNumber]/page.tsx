@@ -73,9 +73,31 @@ export default function OrderConfirmationPage() {
           // Show warning if in demo mode
           if (data.warning) {
             console.warn('Demo mode warning:', data.warning.message);
+            // Save order data to localStorage for demo mode persistence
+            try {
+              localStorage.setItem(
+                `demo-order-${orderNumber}`,
+                JSON.stringify(data.data.order)
+              );
+              console.log('✅ Demo order saved to localStorage');
+            } catch (storageError) {
+              console.warn('⚠️ Could not save order to localStorage:', storageError);
+            }
           }
           setOrder(data.data.order);
         } else if (data.error) {
+          // Try to get order from localStorage (demo mode fallback)
+          try {
+            const storedOrder = localStorage.getItem(`demo-order-${orderNumber}`);
+            if (storedOrder) {
+              console.log('✅ Retrieved demo order from localStorage');
+              setOrder(JSON.parse(storedOrder));
+              return;
+            }
+          } catch (storageError) {
+            console.warn('⚠️ Could not retrieve order from localStorage:', storageError);
+          }
+          
           // Display user-friendly error message from the API
           const errorMessage = data.error.message || 'Commande non trouvée';
           const errorDetails = data.error.details ? ` (${data.error.details})` : '';
@@ -92,6 +114,19 @@ export default function OrderConfirmationPage() {
         }
       } catch (err) {
         console.error('Error fetching order:', err);
+        
+        // Try to get order from localStorage as fallback
+        try {
+          const storedOrder = localStorage.getItem(`demo-order-${orderNumber}`);
+          if (storedOrder) {
+            console.log('✅ Retrieved demo order from localStorage (fallback)');
+            setOrder(JSON.parse(storedOrder));
+            return;
+          }
+        } catch (storageError) {
+          console.warn('⚠️ Could not retrieve order from localStorage:', storageError);
+        }
+        
         setError('Erreur de connexion. Veuillez vérifier votre connexion internet et réessayer.');
       } finally {
         setLoading(false);

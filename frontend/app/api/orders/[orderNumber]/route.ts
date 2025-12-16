@@ -7,6 +7,7 @@ import {
   logError,
 } from '@/app/lib/orderErrors';
 import { demoOrdersStore } from '@/app/lib/demoOrdersStore';
+import { fetchOrderFromSupabase } from '@/app/lib/supabaseOrders';
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3001';
 
@@ -22,42 +23,27 @@ const generateFallbackDemoOrder = (orderNumber: string) => {
     orderNumber: orderNumber,
     order_number: orderNumber,
     
-    // Customer information
-    customerName: 'Client Démo',
-    customerPhone: '+224 123 456 789',
-    customerEmail: 'demo@grandson-project.com',
+    // Customer information - using generic fallback
+    customerName: 'Client',
+    customerPhone: '+224',
+    customerEmail: '',
     
     // Delivery information
-    deliveryAddress: 'Conakry, Guinée',
-    deliveryZone: 'Ratoma',
-    deliveryFee: 20000,
+    deliveryAddress: 'Adresse non spécifiée',
+    deliveryZone: 'Zone non spécifiée',
+    deliveryFee: 0,
     
     // Order details
-    totalAmount: 95000,
-    total: 95000,
+    totalAmount: 0,
+    total: 0,
     status: 'PENDING',
     
     // Timestamps
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     
-    // Sample items
-    items: [
-      {
-        id: `${demoId}-item-1`,
-        orderId: demoId,
-        productId: 'demo-product-1',
-        size: 'M',
-        quantity: 2,
-        price: 37500,
-        color: 'Noir',
-        product: {
-          id: 'demo-product-1',
-          name: 'T-Shirt Grandson Classic',
-          images: []
-        }
-      }
-    ]
+    // Empty items - will be populated if available
+    items: []
   };
 };
 
@@ -183,7 +169,35 @@ export async function GET(
       console.log(`[${getTimestamp()}] 🔄 Activating demo mode`);
     }
     
-    // Utiliser les données de démonstration si le backend n'est pas disponible
+    // Try Supabase directly as fallback
+    console.log(`[${getTimestamp()}] 🔄 Attempting to fetch order from Supabase...`);
+    
+    try {
+      const supabaseOrder = await fetchOrderFromSupabase(orderNumber);
+      
+      if (supabaseOrder) {
+        console.log(`[${getTimestamp()}] ✅ Order found in Supabase: ${orderNumber}`);
+        console.log(`[${getTimestamp()}] 📄 Order details:`, JSON.stringify({
+          orderNumber: supabaseOrder.orderNumber,
+          customerName: supabaseOrder.customerName,
+          itemCount: supabaseOrder.items?.length || 0,
+          totalAmount: supabaseOrder.totalAmount
+        }, null, 2));
+        console.log(`[${getTimestamp()}] ⏱️  Total request duration: ${Date.now() - startTime}ms`);
+        console.log(`${'='.repeat(80)}\n`);
+        
+        return NextResponse.json({
+          success: true,
+          data: {
+            order: supabaseOrder
+          }
+        });
+      }
+    } catch (supabaseError) {
+      console.error(`[${getTimestamp()}] ⚠️  Supabase fetch failed:`, supabaseError);
+    }
+    
+    // Utiliser les données de démonstration si le backend et Supabase ne sont pas disponibles
     console.log(`[${getTimestamp()}] 🎭 DEMO MODE ACTIVATED`);
     console.log(`[${getTimestamp()}] 🔍 Checking demo orders store for: ${orderNumber}`);
     console.log(`[${getTimestamp()}] 📊 Demo orders store size: ${demoOrdersStore.size}`);
@@ -201,6 +215,7 @@ export async function GET(
       }, null, 2));
     } else {
       console.log(`[${getTimestamp()}] ⚠️  Demo order not found in store, generating fallback data`);
+      console.log(`[${getTimestamp()}] 💡 Note: In production, order data should be retrieved from client-side storage`);
       demoOrderData = generateFallbackDemoOrder(orderNumber);
       console.log(`[${getTimestamp()}] 📄 Fallback demo order generated`);
     }
